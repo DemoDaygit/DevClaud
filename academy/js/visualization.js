@@ -126,23 +126,29 @@ export class Visualization3D {
     }
 
     createGraph() {
-        // Create nodes for each topic
-        this.curriculum.topics.forEach(topic => {
-            this.createNode(topic);
-        });
+        // Create nodes from curriculum
+        if (this.curriculum.nodes) {
+            this.curriculum.nodes.forEach(node => {
+                this.createNode(node);
+            });
+        }
 
-        // Create edges based on learning paths
-        this.createEdges();
+        // Create edges from curriculum
+        if (this.curriculum.edges) {
+            this.curriculum.edges.forEach(edge => {
+                this.createEdge(edge.from, edge.to, '#667eea');
+            });
+        }
     }
 
-    createNode(topic) {
+    createNode(node) {
         // Node geometry - sphere with glow effect
         const geometry = new THREE.SphereGeometry(0.5, 32, 32);
 
-        // Material with topic color
+        // Material with node color
         const material = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(topic.color),
-            emissive: new THREE.Color(topic.color),
+            color: new THREE.Color(node.color),
+            emissive: new THREE.Color(node.color),
             emissiveIntensity: 0.3,
             shininess: 100,
             transparent: true,
@@ -150,13 +156,13 @@ export class Visualization3D {
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(topic.position.x, topic.position.y, topic.position.z);
-        mesh.userData = { topic };
+        mesh.position.set(node.position.x, node.position.y, node.position.z);
+        mesh.userData = { node };
 
         // Add glow effect
         const glowGeometry = new THREE.SphereGeometry(0.7, 16, 16);
         const glowMaterial = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(topic.color),
+            color: new THREE.Color(node.color),
             transparent: true,
             opacity: 0.2,
             side: THREE.BackSide
@@ -165,26 +171,29 @@ export class Visualization3D {
         mesh.add(glow);
 
         // Add label
-        this.createLabel(topic, mesh);
+        this.createLabel(node, mesh);
 
         this.scene.add(mesh);
-        this.nodeObjects.set(topic.id, mesh);
+        this.nodeObjects.set(node.id, mesh);
         this.nodes.push(mesh);
     }
 
-    createLabel(topic, nodeMesh) {
+    createLabel(node, nodeMesh) {
         // Create canvas for text
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.width = 512;
         canvas.height = 128;
 
+        // Get label text (support both string and object)
+        const labelText = typeof node.label === 'object' ? node.label.ru || node.label.en : node.label;
+
         // Draw text
         context.fillStyle = '#ffffff';
         context.font = 'Bold 48px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(topic.title, 256, 64);
+        context.fillText(labelText, 256, 64);
 
         // Create texture and sprite
         const texture = new THREE.CanvasTexture(canvas);
@@ -284,7 +293,7 @@ export class Visualization3D {
 
                 // Callback
                 if (this.onNodeHover) {
-                    this.onNodeHover(hoveredNode.userData.topic);
+                    this.onNodeHover(hoveredNode.userData.node);
                 }
             }
         } else {
@@ -318,7 +327,7 @@ export class Visualization3D {
 
             // Callback
             if (this.onNodeClick) {
-                this.onNodeClick(clickedNode.userData.topic);
+                this.onNodeClick(clickedNode.userData.node);
             }
         }
     }
@@ -399,7 +408,7 @@ export class Visualization3D {
         this.highlightNode(node, 1.5);
 
         if (this.onNodeClick) {
-            this.onNodeClick(node.userData.topic);
+            this.onNodeClick(node.userData.node);
         }
     }
 
@@ -427,13 +436,11 @@ export class Visualization3D {
         animateCamera();
     }
 
-    filterByCategory(category) {
-        this.nodes.forEach(node => {
-            const topic = node.userData.topic;
-            if (category === 'all' || topic.category === category) {
-                node.visible = true;
-            } else {
-                node.visible = false;
+    filterByCategory(category, enabled = true) {
+        this.nodes.forEach(nodeObject => {
+            const node = nodeObject.userData.node;
+            if (node.category === category) {
+                nodeObject.visible = enabled;
             }
         });
     }
