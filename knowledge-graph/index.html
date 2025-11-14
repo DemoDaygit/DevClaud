@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Graph v3.0 - Архитектурная визуализация роевого взаимодействия ИИ</title>
+    
+    <!-- D3.js для продвинутой визуализации -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Three.js для 3D поддержки -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- GSAP для анимаций -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <!-- Vis.js для сетевых графов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        #app {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 80px 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+        
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(90deg, rgba(79, 39, 245, 0.8), rgba(11, 165, 233, 0.8));
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(100, 200, 255, 0.3);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(79, 39, 245, 0.2);
+        }
+        
+        .header h1 {
+            font-size: 1.6em;
+            font-weight: 700;
+            background: linear-gradient(90deg, #64d8ff, #a0ff6f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .control-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #64d8ff;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(100, 216, 255, 0.5);
+            box-shadow: 0 0 10px rgba(100, 216, 255, 0.3);
+        }
+        
+        /* Left Sidebar - Controls */
+        .sidebar-left {
+            background: rgba(20, 20, 40, 0.9);
+            border-right: 2px solid rgba(100, 200, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        
+        .sidebar-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #64d8ff;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid rgba(100, 216, 255, 0.3);
+            padding-bottom: 8px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-item:hover {
+            background: rgba(100, 216, 255, 0.1);
+        }
+        
+        .filter-item input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: #64d8ff;
+        }
+        
+        .filter-item label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.9em;
+        }
+        
+        /* Main Visualization Area */
+        .main-content {
+            grid-column: 2;
+            grid-row: 2;
+            position: relative;
+            background: radial-gradient(circle at 20% 50%, rgba(79, 39, 245, 0.1), transparent),
+                        radial-gradient(circle at 80% 80%, rgba(11, 165, 233, 0.1), transparent);
+        }
+        
+        #network {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        #canvas3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        /* Right Sidebar - Info Panel */
+        .sidebar-right {
+            background: rgba(20, 20, 40, 0.9);
+            border-left: 2px solid rgba(100, 200, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        
+        .info-panel {
+            display: none;
+        }
+        
+        .info-panel.active {
+            display: block;
+        }
+        
+        .info-header {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #a0ff6f;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(160, 255, 111, 0.3);
+        }
+        
+        .info-item {
+            margin-bottom: 15px;
+        }
+        
+        .info-label {
+            font-size: 0.85em;
+            color: #64d8ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 0.95em;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+        
+        .formula-box {
+            background: rgba(100, 216, 255, 0.1);
+            border-left: 3px solid #64d8ff;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #a0ff6f;
+            margin-top: 5px;
+            overflow-x: auto;
+        }
+        
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .tag {
+            background: rgba(160, 255, 111, 0.15);
+            border: 1px solid rgba(160, 255, 111, 0.3);
+            color: #a0ff6f;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(100, 216, 255, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 216, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 216, 255, 0.5);
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(100, 216, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(100, 216, 255, 0.6); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .glow {
+            animation: glow 2s infinite;
+        }
+        
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(20, 20, 40, 0.95);
+            border: 2px solid rgba(100, 200, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 250px;
+            z-index: 40;
+            font-size: 0.85em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            #app {
+                grid-template-columns: 250px 1fr 300px;
+            }
+            
+            .sidebar-left, .sidebar-right {
+                font-size: 0.9em;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #app {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar-left, .sidebar-right {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>🧠 Knowledge Graph v3.0 - Роевое взаимодействие ИИ</h1>
+            <div class="header-controls">
+                <button class="control-btn" onclick="toggleLayout()">📐 Макет</button>
+                <button class="control-btn" onclick="togglePhysics()">⚙️ Физика</button>
+                <button class="control-btn" onclick="exportGraph()">💾 Экспорт</button>
+                <button class="control-btn" onclick="resetView()">🔄 Сброс</button>
+            </div>
+        </div>
+        
+        <div class="sidebar-left">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 Фильтры</div>
+                <div class="filter-group" id="categoryFilters"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">📊 Тип связи</div>
+                <div class="filter-group" id="edgeFilters"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">📅 Период</div>
+                <input type="range" id="yearSlider" min="2018" max="2025" value="2025" 
+                       style="width: 100%; cursor: pointer;">
+                <div style="text-align: center; margin-top: 8px; color: #64d8ff;">
+                    <span id="yearDisplay">2025</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">🔍 Поиск</div>
+                <input type="text" id="searchInput" placeholder="Поиск узлов..."
+                       style="width: 100%; padding: 8px; background: rgba(100, 216, 255, 0.1); 
+                              border: 1px solid rgba(100, 216, 255, 0.3); border-radius: 4px;
+                              color: #e0e0e0;">
+            </div>
+            
+            <div class="sidebar-section">
+                <button class="control-btn" style="width: 100%; margin-bottom: 8px;" onclick="saveState()">💾 Сохранить</button>
+                <button class="control-btn" style="width: 100%;" onclick="loadState()">📂 Загрузить</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div id="network"></div>
+            <canvas id="canvas3d"></canvas>
+            
+            <div class="legend">
+                <div style="color: #64d8ff; font-weight: 600; margin-bottom: 10px;">Легенда</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #64d8ff;"></div>
+                    <span>Основная концепция</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #a0ff6f;"></div>
+                    <span>Метод/Техника</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b9d;"></div>
+                    <span>Приложение</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffd93d;"></div>
+                    <span>Инструмент</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sidebar-right">
+            <div class="info-panel" id="infoPanel">
+                <div class="info-header" id="infoTitle">Выберите узел</div>
+                
+                <div class="info-item">
+                    <div class="info-label">Категория</div>
+                    <div class="info-value" id="infoCategory">—</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Год введения</div>
+                    <div class="info-value" id="infoYear">—</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Описание</div>
+                    <div class="info-value" id="infoDescription">—</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Формула</div>
+                    <div class="formula-box" id="infoFormula" style="display: none;">—</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">ТРИЗ-принцип</div>
+                    <div class="info-value" id="infoTRIZ">—</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Связанные узлы</div>
+                    <div class="tags" id="infoRelated"></div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Ссылки</div>
+                    <div class="tags" id="infoLinks"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============ ДАННЫЕ ГРАФА ============
+        const GRAPH_DATA = {
+            nodes: [
+                // Фундаментальные концепции
+                { id: 1, label: 'Swarm Intelligence', group: 'foundation', year: 1989, 
+                  description: 'Коллективное поведение децентрализованных агентов',
+                  formula: 'SI = ∑(Agent_i behavior + Social interaction)',
+                  triz: 'Принцип 1: Дробление' },
+                
+                { id: 2, label: 'Multi-Agent Systems', group: 'foundation', year: 1995,
+                  description: 'Системы взаимодействующих автономных агентов',
+                  formula: 'MAS = {A_1, A_2, ..., A_n} with interaction protocol',
+                  triz: 'Принцип 4: Асимметрия' },
+                
+                { id: 3, label: 'Emergence', group: 'foundation', year: 1992,
+                  description: 'Возникновение сложного поведения из простых правил',
+                  formula: 'Emergence: Local rules → Global patterns',
+                  triz: 'Принцип 5: Объединение' },
+                
+                { id: 4, label: 'Federated Learning', group: 'method', year: 2016,
+                  description: 'Распределённое обучение на децентрализованных данных',
+                  formula: 'FL: w_t+1 = w_t - η∇F(w_t)',
+                  triz: 'Принцип 2: Вынесение' },
+                
+                { id: 5, label: 'Gradient Compression', group: 'technique', year: 2017,
+                  description: 'Сжатие градиентов для снижения коммуникации',
+                  formula: 'Compression: g_compressed = Quantize(g) × 100-600×',
+                  triz: 'Принцип 6: Универсальность' },
+                
+                { id: 6, label: 'Mixture of Experts', group: 'architecture', year: 1991,
+                  description: 'Архитектура с несколькими специализированными сетями',
+                  formula: 'MoE: y = ∑G(x)_i × E_i(x)',
+                  triz: 'Принцип 3: Локальное качество' },
+                
+                { id: 7, label: 'Consensus Protocols', group: 'method', year: 1978,
+                  description: 'Протоколы достижения согласия в распределённых системах',
+                  formula: 'Consensus: ∀i,j: state_i = state_j',
+                  triz: 'Принцип 7: Вложение' },
+                
+                { id: 8, label: 'Ray Cluster', group: 'tool', year: 2017,
+                  description: 'Фреймворк для распределённых вычислений',
+                  formula: 'Ray: task_parallel(f, args) → Future',
+                  triz: 'Принцип 8: Противовес' },
+                
+                { id: 9, label: 'DeepSpeed', group: 'tool', year: 2020,
+                  description: 'Оптимизация глубокого обучения для масштабирования',
+                  formula: 'DeepSpeed: ZeRO = {Stage1, Stage2, Stage3}',
+                  triz: 'Принцип 9: Предварительное действие' },
+                
+                { id: 10, label: 'vLLM', group: 'tool', year: 2023,
+                  description: 'Высокопроизводительный инференс для LLM',
+                  formula: 'vLLM: throughput = 10-20× vs standard',
+                  triz: 'Принцип 10: Предварительное исполнение' },
+                
+                // Методы обучения
+                { id: 11, label: 'Federated Averaging', group: 'method', year: 2016,
+                  description: 'Усреднение параметров в федеративном обучении',
+                  formula: 'FedAvg: w = (1/K)∑w_k',
+                  triz: 'Принцип 11: Предварительная компенсация' },
+                
+                { id: 12, label: 'Differential Privacy', group: 'technique', year: 2006,
+                  description: 'Математический подход к конфиденциальности данных',
+                  formula: 'DP: Pr[M(D) ∈ S] ≤ e^ε × Pr[M(D\') ∈ S]',
+                  triz: 'Принцип 12: Эквипотенциальность' },
+                
+                { id: 13, label: 'Knowledge Distillation', group: 'technique', year: 2015,
+                  description: 'Передача знаний от большой модели к маленькой',
+                  formula: 'KD: L = αL_CE + (1-α)L_KL',
+                  triz: 'Принцип 13: Наоборот' },
+                
+                { id: 14, label: 'Model Merging', group: 'method', year: 2022,
+                  description: 'Объединение нескольких обученных моделей',
+                  formula: 'Merge: θ_merged = αθ_1 + (1-α)θ_2',
+                  triz: 'Принцип 14: Сфероидальность' },
+                
+                { id: 15, label: 'Attention Mechanism', group: 'architecture', year: 2017,
+                  description: 'Механизм взвешивания входных данных',
+                  formula: 'Attention: α = softmax(Q K^T / √d_k)',
+                  triz: 'Принцип 15: Динамичность' },
+                
+                // Приложения
+                { id: 16, label: 'Cocoon Platform', group: 'application', year: 2024,
+                  description: 'Децентрализованная платформа для роевого ИИ на TON',
+                  formula: 'Cocoon: Agents × TON × Telegram',
+                  triz: 'Принцип 16: Частичное или избыточное действие' },
+                
+                { id: 17, label: 'Telegram Bot Swarm', group: 'application', year: 2024,
+                  description: 'Рой ботов для обработки запросов в Telegram',
+                  formula: 'BotSwarm: request → agent_selection → response',
+                  triz: 'Принцип 17: Переход в другое измерение' },
+                
+                { id: 18, label: 'GPU Cluster Optimization', group: 'application', year: 2023,
+                  description: 'Оптимизация распределённых GPU кластеров',
+                  formula: 'Cluster: Efficiency = Throughput / Power',
+                  triz: 'Принцип 18: Механическая вибрация' },
+                
+                { id: 19, label: 'Real-time Inference', group: 'application', year: 2024,
+                  description: 'Низколатентный инференс для критичных приложений',
+                  formula: 'RTI: latency < 100ms, throughput > 1000 req/s',
+                  triz: 'Принцип 19: Периодическое действие' },
+                
+                { id: 20, label: 'Multi-modal Agents', group: 'application', year: 2024,
+                  description: 'Агенты, работающие с текстом, изображениями и видео',
+                  formula: 'MultiModal: output = f(text, image, video, audio)',
+                  triz: 'Принцип 20: Непрерывность полезного действия' }
+            ],
+            
+            edges: [
+                // Эволюция и развитие
+                { from: 1, to: 2, type: 'evolves_to', label: 'эволюция' },
+                { from: 2, to: 3, type: 'evolves_to', label: 'эволюция' },
+                { from: 1, to: 4, type: 'enables', label: 'основа для' },
+                { from: 3, to: 6, type: 'enables', label: 'основа для' },
+                
+                // Методы и техники
+                { from: 4, to: 11, type: 'implements', label: 'реализует' },
+                { from: 4, to: 12, type: 'requires', label: 'требует' },
+                { from: 11, to: 5, type: 'optimized_by', label: 'оптимизируется' },
+                { from: 6, to: 14, type: 'evolves_to', label: 'эволюция' },
+                { from: 15, to: 6, type: 'enables', label: 'основа для' },
+                
+                // Инструменты
+                { from: 4, to: 8, type: 'uses', label: 'использует' },
+                { from: 11, to: 9, type: 'uses', label: 'использует' },
+                { from: 6, to: 10, type: 'uses', label: 'использует' },
+                
+                // Приложения
+                { from: 2, to: 16, type: 'enables', label: 'основа для' },
+                { from: 4, to: 16, type: 'enables', label: 'основа для' },
+                { from: 16, to: 17, type: 'implements', label: 'реализует' },
+                { from: 8, to: 18, type: 'enables', label: 'основа для' },
+                { from: 10, to: 19, type: 'enables', label: 'основа для' },
+                { from: 15, to: 20, type: 'enables', label: 'основа для' },
+                
+                // Противоречия (как рёбра с типом contradiction)
+                { from: 4, to: 5, type: 'contradiction', label: 'Коммуникация ↔ Точность', weight: 0.8 },
+                { from: 6, to: 12, type: 'contradiction', label: 'Производительность ↔ Приватность', weight: 0.7 },
+                { from: 8, to: 12, type: 'contradiction', label: 'Масштабируемость ↔ Безопасность', weight: 0.75 }
+            ]
+        };
+        
+        // ============ КОНФИГУРАЦИЯ ============
+        const CATEGORIES = {
+            foundation: { color: '#64d8ff', label: 'Фундамент' },
+            method: { color: '#a0ff6f', label: 'Метод' },
+            technique: { color: '#ff6b9d', label: 'Техника' },
+            architecture: { color: '#ffd93d', label: 'Архитектура' },
+            tool: { color: '#00d4ff', label: 'Инструмент' },
+            application: { color: '#ff6b9d', label: 'Приложение' }
+        };
+        
+        const EDGE_TYPES = {
+            evolves_to: { color: '#64d8ff', width: 2, dashes: false },
+            enables: { color: '#a0ff6f', width: 2, dashes: false },
+            implements: { color: '#ffd93d', width: 2, dashes: false },
+            uses: { color: '#00d4ff', width: 2, dashes: false },
+            requires: { color: '#ff6b9d', width: 2, dashes: false },
+            optimized_by: { color: '#64d8ff', width: 1.5, dashes: true },
+            contradiction: { color: '#ff0000', width: 2, dashes: [5, 5] }
+        };
+        
+        // ============ УПРАВЛЕНИЕ СОСТОЯНИЕМ ============
+        class GraphState {
+            constructor() {
+                this.nodes = new vis.DataSet(GRAPH_DATA.nodes.map(n => ({
+                    ...n,
+                    color: CATEGORIES[n.group].color,
+                    title: n.description,
+                    font: { size: 14, color: '#fff' },
+                    shape: 'dot',
+                    size: 25
+                })));
+                
+                this.edges = new vis.DataSet(GRAPH_DATA.edges.map(e => ({
+                    ...e,
+                    color: EDGE_TYPES[e.type].color,
+                    width: EDGE_TYPES[e.type].width,
+                    dashes: EDGE_TYPES[e.type].dashes,
+                    font: { size: 12, color: '#e0e0e0' },
+                    smooth: { type: 'continuous' }
+                })));
+                
+                this.network = null;
+                this.filters = {
+                    categories: new Set(),
+                    edgeTypes: new Set(),
+                    maxYear: 2025,
+                    searchQuery: ''
+                };
+                
+                this.initializeUI();
+            }
+            
+            initializeUI() {
+                // Инициализация фильтров категорий
+                const categoryFilters = document.getElementById('categoryFilters');
+                Object.entries(CATEGORIES).forEach(([key, cat]) => {
+                    const label = document.createElement('label');
+                    label.className = 'filter-item';
+                    label.innerHTML = `
+                        <input type="checkbox" data-category="${key}">
+                        <label style="margin: 0;">${cat.label}</label>
+                    `;
+                    categoryFilters.appendChild(label);
+                });
+                
+                // Инициализация фильтров типов рёбер
+                const edgeFilters = document.getElementById('edgeFilters');
+                Object.entries(EDGE_TYPES).forEach(([key, type]) => {
+                    const label = document.createElement('label');
+                    label.className = 'filter-item';
+                    label.innerHTML = `
+                        <input type="checkbox" data-edge-type="${key}">
+                        <label style="margin: 0;">${key}</label>
+                    `;
+                    edgeFilters.appendChild(label);
+                });
+                
+                // Обработчики событий
+                document.querySelectorAll('[data-category]').forEach(cb => {
+                    cb.addEventListener('change', () => this.applyFilters());
+                });
+                
+                document.querySelectorAll('[data-edge-type]').forEach(cb => {
+                    cb.addEventListener('change', () => this.applyFilters());
+                });
+                
+                document.getElementById('yearSlider').addEventListener('input', (e) => {
+                    this.filters.maxYear = parseInt(e.target.value);
+                    document.getElementById('yearDisplay').textContent = e.target.value;
+                    this.applyFilters();
+                });
+                
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.filters.searchQuery = e.target.value.toLowerCase();
+                    this.applyFilters();
+                });
+            }
+            
+            applyFilters() {
+                // Собрать активные фильтры
+                const activeCategories = new Set(
+                    Array.from(document.querySelectorAll('[data-category]:checked'))
+                        .map(cb => cb.dataset.category)
+                );
+                
+                const activeEdgeTypes = new Set(
+                    Array.from(document.querySelectorAll('[data-edge-type]:checked'))
+                        .map(cb => cb.dataset.edgeType)
+                );
+                
+                // Применить фильтры к узлам
+                this.nodes.forEach(node => {
+                    let visible = true;
+                    
+                    if (activeCategories.size > 0 && !activeCategories.has(node.group)) {
+                        visible = false;
+                    }
+                    
+                    if (node.year > this.filters.maxYear) {
+                        visible = false;
+                    }
+                    
+                    if (this.filters.searchQuery && 
+                        !node.label.toLowerCase().includes(this.filters.searchQuery)) {
+                        visible = false;
+                    }
+                    
+                    this.nodes.update({ id: node.id, hidden: !visible });
+                });
+                
+                // Применить фильтры к рёбрам
+                if (activeEdgeTypes.size > 0) {
+                    this.edges.forEach(edge => {
+                        const visible = activeEdgeTypes.has(edge.type);
+                        this.edges.update({ id: edge.id, hidden: !visible });
+                    });
+                }
+            }
+            
+            selectNode(nodeId) {
+                const node = this.nodes.get(nodeId);
+                if (!node) return;
+                
+                const infoPanel = document.getElementById('infoPanel');
+                infoPanel.classList.add('active');
+                
+                document.getElementById('infoTitle').textContent = node.label;
+                document.getElementById('infoCategory').textContent = CATEGORIES[node.group].label;
+                document.getElementById('infoYear').textContent = node.year;
+                document.getElementById('infoDescription').textContent = node.description;
+                
+                if (node.formula) {
+                    const formulaBox = document.getElementById('infoFormula');
+                    formulaBox.textContent = node.formula;
+                    formulaBox.style.display = 'block';
+                }
+                
+                if (node.triz) {
+                    document.getElementById('infoTRIZ').textContent = node.triz;
+                }
+                
+                // Найти связанные узлы
+                const relatedIds = new Set();
+                this.edges.forEach(edge => {
+                    if (edge.from === nodeId) relatedIds.add(edge.to);
+                    if (edge.to === nodeId) relatedIds.add(edge.from);
+                });
+                
+                const relatedHtml = Array.from(relatedIds)
+                    .map(id => {
+                        const relNode = this.nodes.get(id);
+                        return `<div class="tag">${relNode.label}</div>`;
+                    })
+                    .join('');
+                
+                document.getElementById('infoRelated').innerHTML = relatedHtml || '<div class="tag">Нет связей</div>';
+                
+                // Выделить узел в графе
+                this.network.selectNodes([nodeId]);
+                this.network.focus(nodeId, { scale: 1.5, animation: true });
+            }
+            
+            resetView() {
+                document.querySelectorAll('[data-category], [data-edge-type]').forEach(cb => {
+                    cb.checked = false;
+                });
+                this.filters.searchQuery = '';
+                document.getElementById('searchInput').value = '';
+                this.applyFilters();
+                this.network.fit();
+            }
+            
+            exportState() {
+                const state = {
+                    filters: {
+                        categories: Array.from(this.filters.categories),
+                        edgeTypes: Array.from(this.filters.edgeTypes),
+                        maxYear: this.filters.maxYear,
+                        searchQuery: this.filters.searchQuery
+                    },
+                    selectedNode: this.network.getSelectedNodes()[0] || null
+                };
+                localStorage.setItem('graphState', JSON.stringify(state));
+                alert('Состояние сохранено');
+            }
+            
+            importState() {
+                const state = JSON.parse(localStorage.getItem('graphState'));
+                if (!state) return;
+                
+                // Восстановить фильтры
+                state.filters.categories.forEach(cat => {
+                    const cb = document.querySelector(`[data-category="${cat}"]`);
+                    if (cb) cb.checked = true;
+                });
+                
+                state.filters.edgeTypes.forEach(type => {
+                    const cb = document.querySelector(`[data-edge-type="${type}"]`);
+                    if (cb) cb.checked = true;
+                });
+                
+                document.getElementById('yearSlider').value = state.filters.maxYear;
+                document.getElementById('yearDisplay').textContent = state.filters.maxYear;
+                document.getElementById('searchInput').value = state.filters.searchQuery;
+                
+                this.applyFilters();
+                
+                if (state.selectedNode) {
+                    this.selectNode(state.selectedNode);
+                }
+            }
+        }
+        
+        // ============ ИНИЦИАЛИЗАЦИЯ ============
+        let graphState;
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            graphState = new GraphState();
+            
+            const container = document.getElementById('network');
+            const options = {
+                physics: {
+                    enabled: true,
+                    stabilization: {
+                        iterations: 200
+                    },
+                    forceAtlas2Based: {
+                        gravitationalConstant: -50,
+                        centralGravity: 0.01,
+                        springLength: 200,
+                        springConstant: 0.08
+                    },
+                    maxVelocity: 50,
+                    solver: 'forceAtlas2Based',
+                    timestep: 0.35
+                },
+                interaction: {
+                    navigationButtons: true,
+                    keyboard: true,
+                    zoomView: true,
+                    dragView: true
+                },
+                nodes: {
+                    borderWidth: 2,
+                    borderWidthSelected: 4
+                }
+            };
+            
+            graphState.network = new vis.Network(container, 
+                { nodes: graphState.nodes, edges: graphState.edges }, 
+                options);
+            
+            // Обработчик клика на узел
+            graphState.network.on('click', (params) => {
+                if (params.nodes.length > 0) {
+                    graphState.selectNode(params.nodes[0]);
+                }
+            });
+            
+            // Горячие клавиши
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+                if (e.key === 'Escape') {
+                    graphState.resetView();
+                }
+            });
+            
+            // Попытка загрузить сохранённое состояние
+            try {
+                graphState.importState();
+            } catch (e) {
+                console.log('Нет сохранённого состояния');
+            }
+        });
+        
+        // ============ ФУНКЦИИ УПРАВЛЕНИЯ ============
+        function toggleLayout() {
+            alert('Переключение макета будет реализовано в v3.1');
+        }
+        
+        function togglePhysics() {
+            graphState.network.physics.enabled = !graphState.network.physics.enabled;
+        }
+        
+        function exportGraph() {
+            const data = {
+                nodes: graphState.nodes.get(),
+                edges: graphState.edges.get()
+            };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'knowledge-graph.json';
+            a.click();
+        }
+        
+        function resetView() {
+            graphState.resetView();
+        }
+        
+        function saveState() {
+            graphState.exportState();
+        }
+        
+        function loadState() {
+            graphState.importState();
+        }
+    </script>
+</body>
+</html>

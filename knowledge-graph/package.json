@@ -1,0 +1,45 @@
+{
+  "name": "knowledge-graph",
+  "version": "3.0.0",
+  "description": "Архитектурная визуализация роевого взаимодействия ИИ-моделей с интеграцией Cocoon/TON",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "npx http-server",
+    "test": "vitest",
+    "lint": "eslint examples/",
+    "build": "echo 'Static project - no build needed'",
+    "deploy": "echo 'Deploy to GitHub Pages'"
+  },
+  "keywords": [
+    "swarm-intelligence",
+    "federated-learning",
+    "knowledge-graph",
+    "cocoon",
+    "ton",
+    "multi-agent-systems",
+    "distributed-ai"
+  ],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "vis-network": "^9.1.0",
+    "d3": "^7.8.0",
+    "three": "^r128",
+    "gsap": "^3.12.2"
+  },
+  "devDependencies": {
+    "vitest": "^0.34.0",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DemoDaygit/DevClaud.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DemoDaygit/DevClaud/issues"
+  },
+  "homepage": "https://github.com/DemoDaygit/DevClaud#readme"
+}

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Граф знаний: Роевое обучение нейросетей v2.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-foundation: #4a5568;
+            --color-basic-algo: #38b2ac;
+            --color-federated: #667eea;
+            --color-compression: #f6ad55;
+            --color-marl: #fc8181;
+            --color-moe: #9f7aea;
+            --color-merging: #48bb78;
+            --color-quantum: #4299e1;
+            --color-blockchain: #ed8936;
+            --color-contradiction: #ff6464;
+            --color-ifr: #51cf66;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3a 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: rgba(20, 25, 45, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #2d3561;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #network {
+            flex: 1;
+            background: radial-gradient(circle at center, #1a1d3a 0%, #0a0e27 100%);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 14px;
+            margin: 15px 0 10px;
+            color: #8b9dc3;
+            border-bottom: 1px solid #2d3561;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(45, 53, 97, 0.4);
+            border: 1px solid #2d3561;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            background: rgba(45, 53, 97, 0.6);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 150px;
+            left: 20px;
+            width: 280px;
+            background: rgba(20, 25, 45, 0.98);
+            border: 1px solid #2d3561;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 101;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result {
+            padding: 10px;
+            border-bottom: 1px solid #2d3561;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .search-result-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .search-result-desc {
+            font-size: 11px;
+            color: #8b9dc3;
+            line-height: 1.4;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: rgba(45, 53, 97, 0.4);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border-left: 3px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #8b9dc3;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 10px;
+        }
+
+        .filter-group {
+            margin-bottom: 12px;
+        }
+
+        .filter-group label {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 3px 0;
+            background: rgba(45, 53, 97, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+        }
+
+        .filter-group label:hover {
+            background: rgba(45, 53, 97, 0.6);
+            transform: translateX(3px);
+        }
+
+        .filter-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .category-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: auto;
+            display: inline-block;
+        }
+
+        .timeline-slider {
+            margin: 15px 0;
+        }
+
+        .timeline-slider input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 3px;
+            background: #2d3561;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .timeline-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #8b9dc3;
+            margin-top: 4px;
+        }
+
+        .info-panel {
+            background: rgba(20, 25, 45, 0.95);
+            border-top: 2px solid #2d3561;
+            padding: 15px;
+            max-height: 280px;
+            overflow-y: auto;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-panel h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info-panel p {
+            line-height: 1.5;
+            color: #b0b0b0;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .formula-box {
+            background: rgba(45, 53, 97, 0.4);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow-x: auto;
+            border-left: 3px solid #667eea;
+            font-size: 11px;
+        }
+
+        .principle-box {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .contradiction-indicator {
+            background: rgba(255, 100, 100, 0.1);
+            border-left: 3px solid #ff6464;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #ff8787;
+        }
+
+        .solution-box {
+            background: rgba(81, 207, 102, 0.1);
+            border-left: 3px solid #51cf66;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #69db7c;
+        }
+
+        .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+
+        .meta-tag {
+            background: rgba(45, 53, 97, 0.5);
+            padding: 3px 8px;
+            border-radius: 3px;
+            color: #8b9dc3;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(45, 53, 97, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px;
+            background: rgba(45, 53, 97, 0.3);
+            border-radius: 3px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .keyboard-hint {
+            font-size: 10px;
+            color: #6b7494;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(45, 53, 97, 0.2);
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+
+        .keyboard-hint strong {
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-height: 40%;
+                border-right: none;
+                border-bottom: 2px solid #2d3561;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            .search-results {
+                left: 10px;
+                width: calc(100% - 20px);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .sidebar {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            h2 {
+                font-size: 12px;
+                margin: 10px 0 8px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>🧠 Граф Знаний<br>Роевое Обучение v2.0</h1>
+            
+            <div class="controls">
+                <button class="btn btn-small" onclick="graphState.resetView()">🔄 Сброс</button>
+                <button class="btn btn-small" onclick="graphState.fitNetwork()">📐 Размер</button>
+                <button class="btn btn-small" onclick="graphState.exportState()">💾 Сохр</button>
+                <button class="btn btn-small" onclick="graphState.importState()">📂 Загр</button>
+            </div>
+
+            <div>
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Поиск узлов (Ctrl+F)...">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="nodeCount">0</div>
+                    <div class="stat-label">Концепций</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="edgeCount">0</div>
+                    <div class="stat-label">Связей</div>
+                </div>
+            </div>
+
+            <h2>⏳ Временная эволюция</h2>
+            <div class="timeline-slider">
+                <input type="range" id="timelineSlider" min="0" max="5" value="5" step="1">
+                <div class="timeline-labels">
+                    <span>2018</span>
+                    <span>2020</span>
+                    <span>2022</span>
+                    <span>2024</span>
+                    <span>2025+</span>
+                </div>
+            </div>
+
+            <h2>📊 Категории</h2>
+            <div class="filter-group" id="categoryFilters"></div>
+
+            <h2>🔗 Типы связей</h2>
+            <div class="filter-group" id="edgeFilters"></div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #667eea;"></div>
+                    <span>Эволюция</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6464;"></div>
+                    <span>Противоречие</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Решает</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f38181;"></div>
+                    <span>Комбинирует</span>
+                </div>
+            </div>
+
+            <div class="keyboard-hint">
+                <strong>Горячие клавиши:</strong><br>
+                <strong>Ctrl+F</strong> - поиск<br>
+                <strong>Esc</strong> - сброс<br>
+                <strong>Space</strong> - инфо узла
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="network">
+                <div class="loading">Инициализация графа</div>
+            </div>
+            <div class="info-panel" id="infoPanel">
+                <h3>👋 Добро пожаловать!</h3>
+                <p>Интерактивный граф эволюции технологий роевого обучения. ТРИЗ-методология встроена в архитектуру.</p>
+                <p><strong>Используйте:</strong></p>
+                <ul style="margin-left: 15px; color: #b0b0b0; font-size: 12px;">
+                    <li>🖱️ Клик на узел → информация</li>
+                    <li>🔍 Поиск (Ctrl+F) → быстрый поиск</li>
+                    <li>⏳ Слайдер → эволюция во времени</li>
+                    <li>📊 Фильтры → категории и типы</li>
+                    <li>🎯 Квадратные узлы → противоречия</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // ДАННЫЕ ГРАФА (отделены от логики)
+        // ============================================
+        
+        const CATEGORIES = {
+            foundation: { name: '🏛️ Математические основы', color: '#4a5568' },
+            basic_algo: { name: '⚙️ Базовые алгоритмы', color: '#38b2ac' },
+            federated: { name: '🌐 Федеративное обучение', color: '#667eea' },
+            compression: { name: '📦 Сжатие', color: '#f6ad55' },
+            marl: { name: '🤖 MARL', color: '#fc8181' },
+            moe: { name: '⭐ MoE', color: '#9f7aea' },
+            merging: { name: '🔗 Model Merging', color: '#48bb78' },
+            quantum: { name: '⚛️ Quantum-Inspired', color: '#4299e1' },
+            blockchain: { name: '⛓️ Blockchain', color: '#ed8936' }
+        };
+
+        const EDGE_TYPES = {
+            evolves_to: { name: 'Эволюция', color: '#667eea' },
+            requires: { name: 'Требует', color: '#ff6b6b' },
+            resolves: { name: 'Решает', color: '#4ecdc4' },
+            implements: { name: 'Реализует', color: '#95e1d3' },
+            combines: { name: 'Комбинирует', color: '#f38181' },
+            contradiction: { name: 'Противоречие', color: '#ff6464' }
+        };
+
+        // ============================================
+        // УЗЛЫ (сокращённый набор для демо)
+        // ============================================
+        
+        const GRAPH_DATA = {
+            nodes: [
+                // Математические основы
+                { id: 1, label: 'Теория\nОптимизации', group: 'foundation', year: 2018, title: 'Теория оптимизации', description: 'Математическая основа всех методов обучения. Включает градиентные методы и стохастическую оптимизацию.', formula: '\\min_{\\theta} \\mathbb{E}[L(f_{\\theta}(x), y)]', triz: 'Системность - базовый уровень иерархии' },
+                { id: 2, label: 'Game Theory', group: 'foundation', year: 2018, title: 'Теория игр', description: 'Математическая теория стратегического взаимодействия между рациональными агентами.', formula: 'Nash Equilibrium: \\pi_i^* = \\arg\\max_{\\pi_i} \\mathbb{E}[R_i]', triz: 'Согласование - разрешение конфликтов' },
+                { id: 3, label: 'Информационная\nТеория', group: 'foundation', year: 2018, title: 'Информационная теория', description: 'Количественная оценка информации, энтропии и коммуникации.', formula: 'H(X) = -\\sum_x p(x)\\log p(x)', triz: 'Измеримость - квантификация информации' },
+
+                // Базовые алгоритмы
+                { id: 10, label: 'SGD', group: 'basic_algo', year: 2018, title: 'Stochastic Gradient Descent', description: 'Базовый алгоритм оптимизации для нейронных сетей.', formula: '\\theta_{t+1} = \\theta_t - \\eta_t \\nabla L', triz: 'Дробление - использование мини-батчей' },
+                { id: 11, label: 'Adam', group: 'basic_algo', year: 2018, title: 'Adaptive Moment Estimation', description: 'Адаптивный алгоритм оптимизации с momentum.', formula: '\\theta_{t+1} = \\theta_t - \\eta\\frac{m_t}{\\sqrt{v_t}+\\epsilon}', triz: 'Адаптация - покоординатная настройка' },
+                { id: 12, label: 'PSO', group: 'basic_algo', year: 2018, title: 'Particle Swarm Optimization', description: 'Роевой алгоритм оптимизации, имитирующий поведение птичьих стай.', formula: 'v_i^{t+1} = wv_i^t + c_1r_1(p_i-x_i^t) + c_2r_2(g-x_i^t)', triz: 'Коллективизм - использование опыта группы' },
+
+                // Федеративное обучение
+                { id: 20, label: 'FedAvg', group: 'federated', year: 2019, title: 'Federated Averaging', description: 'Базовый алгоритм федеративного обучения. Клиенты обучаются локально, сервер усредняет веса.', formula: '\\theta_{t+1} = \\sum_{k=1}^K \\frac{n_k}{n}\\theta_k^{t+1}', triz: 'Объединение - агрегация локальных моделей' },
+                { id: 21, label: 'FedProx', group: 'federated', year: 2020, title: 'Federated Proximal', description: 'Расширение FedAvg с проксимальным членом для гетерогенности.', formula: '\\min_\\theta f_k(\\theta) + \\frac{\\mu}{2}\\|\\theta - \\theta^t\\|^2', triz: 'Регуляризация - ограничение отклонений' },
+                { id: 22, label: 'SCAFFOLD', group: 'federated', year: 2020, title: 'Stochastic Controlled Averaging', description: 'Использует контрольные вариаты для устранения client drift.', formula: 'g_i = \\nabla f_i(x) - c_i + c', triz: 'Управление отклонениями' },
+                { id: 24, label: 'DiLoCo', group: 'federated', year: 2024, title: 'Distributed Low-Communication', description: 'Экстремально редкая синхронизация (каждые 500 шагов).', formula: 'H=500, \\theta_{global}^{t+1} = \\theta_{global}^t + \\tau\\sum_{i=1}^N ...', triz: 'Периодичность - минимизация коммуникации' },
+
+                // Сжатие
+                { id: 30, label: 'Top-K\nSparsification', group: 'compression', year: 2019, title: 'Top-K Gradient Sparsification', description: 'Передача только k крупнейших градиентов с error feedback.', formula: 'g_{sparse} = TopK(g, k), e_{t+1} = e_t + (g_t - g_{sparse})', triz: 'Избирательность - фокус на важном' },
+                { id: 31, label: 'PowerSGD', group: 'compression', year: 2020, title: 'PowerSGD Low-Rank Compression', description: 'Low-rank аппроксимация матрицы градиентов.', formula: 'M \\approx PQ^T, ratio = \\frac{nm}{r(n+m)}', triz: 'Декомпозиция - разложение на факторы' },
+                { id: 32, label: 'QSGD', group: 'compression', year: 2019, title: 'Quantized SGD', description: 'Стохастическая квантизация градиентов.', formula: '\\mathbb{E}[Q_s(v)] = v', triz: 'Дискретизация - уменьшение битности' },
+
+                // MoE
+                { id: 50, label: 'Switch\nTransformers', group: 'moe', year: 2021, title: 'Switch Transformers', description: 'Simplified MoE с top-1 routing. 1.6T параметров, 4× ускорение.', formula: 'y = \\sum_{i=1}^n G(x)_i E_i(x)', triz: 'Специализация - разделение экспертизы' },
+                { id: 51, label: 'Expert Choice\nRouting', group: 'moe', year: 2022, title: 'Expert Choice Routing', description: 'Эксперты выбирают токены. Идеальная балансировка нагрузки.', formula: 'selected\\_tokens = TopK(Router(tokens))', triz: 'Инверсия - обратная логика выбора' },
+                { id: 52, label: 'Mixture of\nAgents', group: 'moe', year: 2024, title: 'Mixture of Agents', description: 'Layered LLM collaboration. Каждый агент использует outputs предыдущих.', formula: 'response_{layer_i} = LLM_i(query, \\{responses\\})', triz: 'Послойное сотрудничество' },
+
+                // Model Merging
+                { id: 60, label: 'TIES-Merging', group: 'merging', year: 2023, title: 'TIES Merging', description: 'TRIM magnitude, ELECT sign, DISJOINT MERGE.', formula: 'elected\\_sign = sign(\\sum \\mathbb{1}[...]\\cdot|\\tau_i|)', triz: 'Согласование - разрешение конфликтов' },
+                { id: 61, label: 'DARE', group: 'merging', year: 2023, title: 'Drop And REscale', description: 'Random drop с rescaling. Экстремальная спарсификация.', formula: 'drop(\\theta, p) = \\begin{cases} 0 & w.p.\\; p \\\\ \\theta/(1-p) & w.p.\\; 1-p \\end{cases}', triz: 'Стохастизация' },
+
+                // MARL
+                { id: 40, label: 'QMIX', group: 'marl', year: 2019, title: 'Monotonic Value Function Factorization', description: 'Value decomposition с mixing network.', formula: 'Q_{tot} = f(Q_1, ..., Q_n; s)', triz: 'Декомпозиция с ограничениями' },
+                { id: 41, label: 'MAPPO', group: 'marl', year: 2021, title: 'Multi-Agent PPO', description: 'Простой PPO с value normalization и parameter sharing.', formula: 'L^{CLIP} = \\mathbb{E}[\\min(r_t A_t, ...)]', triz: 'Простота - минимальные модификации' },
+
+                // Blockchain
+                { id: 80, label: 'Blockchain\nFL', group: 'blockchain', year: 2021, title: 'Blockchain-enabled FL', description: 'Децентрализованная координация через smart contracts.', formula: 'hash(block_n) = SHA256(...)', triz: 'Распределение доверия - консенсус' },
+                { id: 81, label: 'PoETA', group: 'blockchain', year: 2025, title: 'Proof of Elapsed Time and Accuracy', description: 'Consensus mechanism использующий ML training как proof.', formula: 'reward \\propto accuracy \\times time', triz: 'Переориентация - польза от работы' }
+            ],
+            
+            edges: [
+                // Основы → Базовые алгоритмы
+                { from: 1, to: 10, type: 'requires', label: 'базис' },
+                { from: 1, to: 11, type: 'requires', label: 'базис' },
+                { from: 1, to: 12, type: 'requires', label: 'базис' },
+                { from: 2, to: 40, type: 'requires', label: 'game theory' },
+                { from: 3, to: 30, type: 'requires', label: 'entropy' },
+
+                // Эволюция федеративного обучения
+                { from: 10, to: 20, type: 'evolves_to', label: 'extends' },
+                { from: 20, to: 21, type: 'evolves_to', label: '2020' },
+                { from: 20, to: 22, type: 'evolves_to', label: '2020' },
+                { from: 11, to: 21, type: 'evolves_to', label: 'adapts' },
+                { from: 20, to: 24, type: 'evolves_to', label: '2024' },
+
+                // Сжатие коммуникации
+                { from: 10, to: 30, type: 'evolves_to', label: 'compresses' },
+                { from: 10, to: 31, type: 'evolves_to', label: 'compresses' },
+                { from: 10, to: 32, type: 'evolves_to', label: 'quantizes' },
+                { from: 32, to: 31, type: 'evolves_to', label: 'combines' },
+
+                // MoE эволюция
+                { from: 50, to: 51, type: 'evolves_to', label: 'inverts' },
+                { from: 50, to: 52, type: 'evolves_to', label: 'agents' },
+
+                // Merging
+                { from: 60, to: 61, type: 'evolves_to', label: 'stochastic' },
+
+                // MARL
+                { from: 40, to: 41, type: 'evolves_to', label: 'simplifies' },
+
+                // Интеграции
+                { from: 20, to: 30, type: 'combines', label: 'uses' },
+                { from: 24, to: 30, type: 'combines', label: 'integrates' },
+                { from: 80, to: 24, type: 'combines', label: 'coordination' },
+                { from: 52, to: 60, type: 'combines', label: 'merges' },
+
+                // ПРОТИВОРЕЧИЯ (не как узлы, а как рёбра с аннотацией)
+                { from: 20, to: 30, type: 'contradiction', label: 'Communication ↔ Accuracy', weight: 0.8 },
+                { from: 24, to: 31, type: 'contradiction', label: 'Compression ↔ Quality', weight: 0.9 }
+            ]
+        };
+
+        // ============================================
+        // УПРАВЛЕНИЕ СОСТОЯНИЕМ
+        // ============================================
+        
+        class GraphState {
+            constructor() {
+                this.nodes = new vis.DataSet(GRAPH_DATA.nodes);
+                this.edges = new vis.DataSet(GRAPH_DATA.edges);
+                this.network = null;
+                this.filters = {
+                    categories: new Set(Object.keys(CATEGORIES)),
+                    edgeTypes: new Set(Object.keys(EDGE_TYPES)),
+                    maxYear: 2025,
+                    searchQuery: ''
+                };
+                this.fuseSearch = null;
+                this.loadState();
+            }
+
+            init() {
+                const container = document.getElementById('network');
+                const options = {
+                    nodes: {
+                        margin: 10,
+                        widthConstraint: { maximum: 200 },
+                        font: { size: 14, face: 'Segoe UI', multi: true },
+                        shadow: { enabled: true, color: 'rgba(0,0,0,0.3)', size: 10, x: 2, y: 2 },
+                        borderWidth: 2,
+                        borderWidthSelected: 4
+                    },
+                    edges: {
+                        font: { size: 11, color: '#b0b0b0', strokeWidth: 0 },
+                        smooth: { type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.4 },
+                        shadow: { enabled: true, color: 'rgba(0,0,0,0.2)', size: 5, x: 1, y: 1 }
+                    },
+                    groups: this.getGroupStyles(),
+                    layout: {
+                        hierarchical: {
+                            enabled: true,
+                            levelSeparation: 250,
+                            nodeSpacing: 200,
+                            treeSpacing: 250,
+                            direction: 'LR',
+                            sortMethod: 'directed'
+                        }
+                    },
+                    physics: { enabled: false },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 100,
+                        zoomView: true,
+                        dragView: true,
+                        navigationButtons: true,
+                        keyboard: { enabled: true }
+                    }
+                };
+
+                const data = { nodes: this.nodes, edges: this.edges };
+                this.network = new vis.Network(container, data, options);
+                this.network.once('stabilizationIterationsDone', () => {
+                    document.querySelector('.loading').style.display = 'none';
+                    this.updateStats();
+                    this.network.fit();
+                });
+
+                this.setupEventHandlers();
+                this.setupFuzzySearch();
+            }
+
+            getGroupStyles() {
+                const styles = {};
+                Object.entries(CATEGORIES).forEach(([key, cat]) => {
+                    styles[key] = {
+                        color: { background: cat.color, border: this.darken(cat.color), highlight: { background: this.lighten(cat.color), border: cat.color } },
+                        font: { color: '#ffffff', size: 14 }
+                    };
+                });
+                return styles;
+            }
+
+            darken(color) {
+                const c = color.substring(1);
+                const num = parseInt(c, 16);
+                const amt = Math.round(2.55 * -30);
+                const R = Math.max(0, (num >> 16) + amt);
+                const G = Math.max(0, (num >> 8 & 0x00FF) + amt);
+                const B = Math.max(0, (num & 0x0000FF) + amt);
+                return '#' + (0x1000000 + (R < 255 ? R : 255) * 0x10000 + (G < 255 ? G : 255) * 0x100 + (B < 255 ? B : 255)).toString(16).slice(1);
+            }
+
+            lighten(color) {
+                const c = color.substring(1);
+                const num = parseInt(c, 16);
+                const amt = Math.round(2.55 * 30);
+                const R = Math.min(255, (num >> 16) + amt);
+                const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
+                const B = Math.min(255, (num & 0x0000FF) + amt);
+                return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+            }
+
+            setupFuzzySearch() {
+                const nodeArray = this.nodes.get();
+                this.fuseSearch = new Fuse(nodeArray, {
+                    keys: ['title', 'description', 'label'],
+                    threshold: 0.3,
+                    includeScore: true
+                });
+            }
+
+            setupEventHandlers() {
+                this.network.on('click', (params) => {
+                    if (params.nodes.length > 0) {
+                        this.showNodeInfo(params.nodes[0]);
+                    }
+                });
+
+                document.getElementById('searchBox').addEventListener('input', (e) => this.handleSearch(e.target.value));
+                document.getElementById('timelineSlider').addEventListener('input', (e) => this.handleTimelineChange(e.target.value));
+                document.getElementById('categoryFilters').addEventListener('change', () => this.applyFilters());
+                document.getElementById('edgeFilters').addEventListener('change', () => this.applyFilters());
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'f') { e.preventDefault(); document.getElementById('searchBox').focus(); }
+                    if (e.key === 'Escape') this.resetView();
+                });
+            }
+
+            handleSearch(query) {
+                this.filters.searchQuery = query.toLowerCase();
+                const results = query ? this.fuseSearch.search(query).slice(0, 8) : [];
+                this.renderSearchResults(results);
+                this.applyFilters();
+            }
+
+            renderSearchResults(results) {
+                const container = document.getElementById('searchResults');
+                if (!results.length) {
+                    container.classList.remove('active');
+                    return;
+                }
+
+                container.innerHTML = results.map(r => `
+                    <div class="search-result" onclick="graphState.selectNode(${r.item.id})">
+                        <div class="search-result-title">${r.item.title}</div>
+                        <div class="search-result-desc">${r.item.description.substring(0, 60)}...</div>
+                    </div>
+                `).join('');
+                container.classList.add('active');
+            }
+
+            selectNode(nodeId) {
+                this.network.selectNodes([nodeId]);
+                this.showNodeInfo(nodeId);
+                this.network.focus(nodeId, { scale: 1.2, animation: true });
+                document.getElementById('searchResults').classList.remove('active');
+            }
+
+            showNodeInfo(nodeId) {
+                const node = this.nodes.get(nodeId);
+                let html = `<h3>${node.title}</h3><p>${node.description}</p>`;
+                
+                if (node.formula) {
+                    html += `<div class="formula-box">$$${node.formula}$$</div>`;
+                }
+                if (node.triz) {
+                    html += `<div class="principle-box"><strong>ТРИЗ:</strong> ${node.triz}</div>`;
+                }
+
+                // Показать связанные противоречия
+                const contradictions = this.edges.get({ filter: e => (e.from === nodeId || e.to === nodeId) && e.type === 'contradiction' });
+                if (contradictions.length) {
+                    html += `<div class="contradiction-indicator"><strong>⚔️ Противоречия:</strong><br>${contradictions.map(c => c.label).join('<br>')}</div>`;
+                }
+
+                html += `<div class="meta-info"><span class="meta-tag">📅 ${node.year}</span><span class="meta-tag">🏷️ ${node.group}</span></div>`;
+                
+                document.getElementById('infoPanel').innerHTML = html;
+                MathJax.typesetPromise([document.getElementById('infoPanel')]);
+            }
+
+            handleTimelineChange(value) {
+                const yearMap = { 0: 2018, 1: 2019, 2: 2020, 3: 2021, 4: 2022, 5: 2025 };
+                this.filters.maxYear = yearMap[parseInt(value)];
+                this.applyFilters();
+            }
+
+            applyFilters() {
+                const categoryChecks = Array.from(document.querySelectorAll('#categoryFilters input:checked')).map(c => c.value);
+                const edgeTypeChecks = Array.from(document.querySelectorAll('#edgeFilters input:checked')).map(c => c.value);
+
+                this.filters.categories = new Set(categoryChecks);
+                this.filters.edgeTypes = new Set(edgeTypeChecks);
+
+                this.nodes.forEach(node => {
+                    const matchesCategory = this.filters.categories.has(node.group);
+                    const matchesYear = node.year <= this.filters.maxYear;
+                    const matchesSearch = !this.filters.searchQuery || 
+                        node.title.toLowerCase().includes(this.filters.searchQuery) ||
+                        node.description.toLowerCase().includes(this.filters.searchQuery);
+                    
+                    this.nodes.update({ id: node.id, hidden: !(matchesCategory && matchesYear && matchesSearch) });
+                });
+
+                this.edges.forEach(edge => {
+                    const fromNode = this.nodes.get(edge.from);
+                    const toNode = this.nodes.get(edge.to);
+                    const visible = fromNode && toNode && !fromNode.hidden && !toNode.hidden && this.filters.edgeTypes.has(edge.type);
+                    this.edges.update({ id: edge.id, hidden: !visible });
+                });
+
+                this.updateStats();
+                this.saveState();
+            }
+
+            updateStats() {
+                const visibleNodes = this.nodes.get({ filter: n => !n.hidden });
+                const visibleEdges = this.edges.get({ filter: e => !e.hidden });
+                document.getElementById('nodeCount').textContent = visibleNodes.length;
+                document.getElementById('edgeCount').textContent = visibleEdges.length;
+            }
+
+            resetView() {
+                document.getElementById('searchBox').value = '';
+                document.getElementById('timelineSlider').value = '5';
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+                this.filters = { categories: new Set(Object.keys(CATEGORIES)), edgeTypes: new Set(Object.keys(EDGE_TYPES)), maxYear: 2025, searchQuery: '' };
+                this.applyFilters();
+                this.network.fit();
+            }
+
+            fitNetwork() {
+                this.network.fit({ animation: { duration: 1000, easingFunction: 'easeInOutQuad' } });
+            }
+
+            exportState() {
+                const state = JSON.stringify({ filters: Array.from(this.filters.categories), edgeTypes: Array.from(this.filters.edgeTypes), maxYear: this.filters.maxYear });
+                localStorage.setItem('graphState', state);
+                alert('✅ Состояние сохранено');
+            }
+
+            importState() {
+                const state = localStorage.getItem('graphState');
+                if (state) {
+                    const parsed = JSON.parse(state);
+                    this.filters.categories = new Set(parsed.filters);
+                    this.filters.edgeTypes = new Set(parsed.edgeTypes);
+                    this.filters.maxYear = parsed.maxYear;
+                    this.applyFilters();
+                    alert('✅ Состояние загружено');
+                } else {
+                    alert('❌ Нет сохраненного состояния');
+                }
+            }
+
+            saveState() {
+                sessionStorage.setItem('graphViewBox', JSON.stringify(this.network.getViewBox()));
+            }
+
+            loadState() {
+                const saved = sessionStorage.getItem('graphViewBox');
+                if (saved) {
+                    try {
+                        const viewBox = JSON.parse(saved);
+                        // Будет применено после инициализации сети
+                    } catch (e) {}
+                }
+            }
+        }
+
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+        
+        let graphState = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            graphState = new GraphState();
+            graphState.init();
+
+            // Создание фильтров категорий
+            const categoryDiv = document.getElementById('categoryFilters');
+            Object.entries(CATEGORIES).forEach(([key, cat]) => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" value="${key}" checked>
+                    <span class="category-indicator" style="background: ${cat.color};"></span>
+                    ${cat.name.split(' ').pop()}
+                `;
+                categoryDiv.appendChild(label);
+            });
+
+            // Создание фильтров типов рёбер
+            const edgeDiv = document.getElementById('edgeFilters');
+            Object.entries(EDGE_TYPES).forEach(([key, type]) => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" value="${key}" checked>
+                    <span class="category-indicator" style="background: ${type.color};"></span>
+                    ${type.name}
+                `;
+                edgeDiv.appendChild(label);
+            });
+
+            graphState.applyFilters();
+        });
+    </script>
+</body>
+</html>
