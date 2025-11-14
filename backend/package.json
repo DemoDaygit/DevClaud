@@ -1,0 +1,46 @@
+{
+  "name": "swarm-ai-knowledge-graph-backend",
+  "version": "4.0.0",
+  "description": "Enterprise-level Knowledge Graph API with Neo4j integration",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "vitest",
+    "lint": "eslint src/",
+    "format": "prettier --write 'src/**/*.js'",
+    "seed": "node scripts/seed-neo4j.js"
+  },
+  "keywords": [
+    "knowledge-graph",
+    "neo4j",
+    "swarm-ai",
+    "graph-analytics",
+    "federated-learning"
+  ],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "neo4j-driver": "^5.15.0",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^7.1.5",
+    "morgan": "^1.10.0",
+    "ws": "^8.16.0",
+    "graphology": "^0.25.4",
+    "graphology-metrics": "^2.1.0",
+    "graphology-communities-louvain": "^2.0.1",
+    "xml2js": "^0.6.2",
+    "papaparse": "^5.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "vitest": "^1.1.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1"
+  }
+}
