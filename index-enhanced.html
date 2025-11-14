@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Graph v4.0 - Enhanced Force-Directed Visualization</title>
+
+    <!-- D3.js v7 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: 70px 1fr 50px;
+            height: 100vh;
+            gap: 0;
+        }
+
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            background-size: 200% 200%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, #f0f0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .control-btn {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Left Sidebar */
+        .sidebar-left {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-right: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-section {
+            margin-bottom: 28px;
+        }
+
+        .sidebar-title {
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .filter-item:hover {
+            background: rgba(102, 126, 234, 0.15);
+            transform: translateX(4px);
+        }
+
+        .filter-item input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .filter-item label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .slider-container {
+            padding: 12px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9em;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #667eea;
+            box-shadow: 0 0 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Main Visualization */
+        .main-content {
+            grid-column: 2;
+            grid-row: 2 / 4;
+            position: relative;
+            background: radial-gradient(circle at 30% 50%, rgba(102, 126, 234, 0.08), transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(118, 75, 162, 0.08), transparent 50%);
+        }
+
+        #graph-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #graph-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Right Sidebar */
+        .sidebar-right {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-left: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-panel {
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .info-panel.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .info-header {
+            font-size: 1.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .info-item {
+            margin-bottom: 16px;
+        }
+
+        .info-label {
+            font-size: 0.75em;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 1em;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .formula-box {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin-top: 8px;
+            color: #a0a0ff;
+        }
+
+        /* Footer */
+        .footer {
+            grid-column: 1;
+            background: #0f0f1a;
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.7);
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: absolute;
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+            border-radius: 8px;
+            padding: 12px 16px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .tooltip.active {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 6px;
+            font-size: 1.1em;
+        }
+
+        .tooltip-desc {
+            font-size: 0.9em;
+            color: #ccc;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧠 Knowledge Graph v4.0</h1>
+            <div class="header-controls">
+                <button class="control-btn" onclick="graphViz.resetView()">🎯 Reset View</button>
+                <button class="control-btn" onclick="graphViz.togglePhysics()">⚡ Physics</button>
+                <button class="control-btn" onclick="graphViz.exportData()">💾 Export</button>
+            </div>
+        </div>
+
+        <!-- Left Sidebar - Controls -->
+        <div class="sidebar-left">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🔍 Поиск</div>
+                <input type="text" id="searchInput" class="search-box" placeholder="Поиск узлов...">
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">📁 Категории</div>
+                <div class="filter-group" id="categoryFilters"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">🔗 Типы связей</div>
+                <div class="filter-group" id="edgeFilters"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">📅 Год: <span id="yearDisplay">2025</span></div>
+                <div class="slider-container">
+                    <input type="range" id="yearSlider" class="slider" min="1978" max="2025" value="2025">
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Visualization -->
+        <div class="main-content">
+            <canvas id="graph-canvas"></canvas>
+            <div class="tooltip" id="tooltip">
+                <div class="tooltip-title"></div>
+                <div class="tooltip-desc"></div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Info Panel -->
+        <div class="sidebar-right">
+            <div class="info-panel" id="infoPanel">
+                <div class="info-header" id="infoTitle">Выберите узел</div>
+
+                <div class="info-item">
+                    <div class="info-label">Категория</div>
+                    <div class="info-value" id="infoCategory">-</div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Год</div>
+                    <div class="info-value" id="infoYear">-</div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Описание</div>
+                    <div class="info-value" id="infoDescription">-</div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Формула</div>
+                    <div class="formula-box" id="infoFormula">-</div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">ТРИЗ Принцип</div>
+                    <div class="info-value" id="infoTRIZ">-</div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Связи</div>
+                    <div class="info-value" id="infoConnections">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="stats">
+                <div class="stat-item">
+                    <span>Узлов:</span>
+                    <span class="stat-value" id="nodeCount">20</span>
+                </div>
+                <div class="stat-item">
+                    <span>Связей:</span>
+                    <span class="stat-value" id="edgeCount">21</span>
+                </div>
+                <div class="stat-item">
+                    <span>FPS:</span>
+                    <span class="stat-value" id="fps">60</span>
+                </div>
+            </div>
+            <div>v4.0 Enhanced | D3.js Force-Directed</div>
+        </div>
+    </div>
+
+    <script>
+        // ============ DATA ============
+        const GRAPH_DATA = {
+            nodes: [
+                { id: 1, label: 'Swarm Intelligence', group: 'foundation', year: 1989,
+                  description: 'Коллективное поведение децентрализованных агентов',
+                  formula: 'SI = ∑(Agent_i behavior + Social interaction)',
+                  triz: 'Принцип 1: Дробление' },
+
+                { id: 2, label: 'Multi-Agent Systems', group: 'foundation', year: 1995,
+                  description: 'Системы взаимодействующих автономных агентов',
+                  formula: 'MAS = {A_1, A_2, ..., A_n} with interaction protocol',
+                  triz: 'Принцип 4: Асимметрия' },
+
+                { id: 3, label: 'Emergence', group: 'foundation', year: 1992,
+                  description: 'Возникновение сложного поведения из простых правил',
+                  formula: 'Emergence: Local rules → Global patterns',
+                  triz: 'Принцип 5: Объединение' },
+
+                { id: 4, label: 'Federated Learning', group: 'method', year: 2016,
+                  description: 'Распределённое обучение на децентрализованных данных',
+                  formula: 'FL: w_t+1 = w_t - η∇F(w_t)',
+                  triz: 'Принцип 2: Вынесение' },
+
+                { id: 5, label: 'Gradient Compression', group: 'technique', year: 2017,
+                  description: 'Сжатие градиентов для снижения коммуникации',
+                  formula: 'Compression: g_compressed = Quantize(g) × 100-600×',
+                  triz: 'Принцип 6: Универсальность' },
+
+                { id: 6, label: 'Mixture of Experts', group: 'architecture', year: 1991,
+                  description: 'Архитектура с несколькими специализированными сетями',
+                  formula: 'MoE: y = ∑G(x)_i × E_i(x)',
+                  triz: 'Принцип 3: Локальное качество' },
+
+                { id: 7, label: 'Consensus Protocols', group: 'method', year: 1978,
+                  description: 'Протоколы достижения согласия в распределённых системах',
+                  formula: 'Consensus: ∀i,j: state_i = state_j',
+                  triz: 'Принцип 7: Вложение' },
+
+                { id: 8, label: 'Ray Cluster', group: 'tool', year: 2017,
+                  description: 'Фреймворк для распределённых вычислений',
+                  formula: 'Ray: task_parallel(f, args) → Future',
+                  triz: 'Принцип 8: Противовес' },
+
+                { id: 9, label: 'DeepSpeed', group: 'tool', year: 2020,
+                  description: 'Оптимизация глубокого обучения для масштабирования',
+                  formula: 'DeepSpeed: ZeRO = {Stage1, Stage2, Stage3}',
+                  triz: 'Принцип 9: Предварительное действие' },
+
+                { id: 10, label: 'vLLM', group: 'tool', year: 2023,
+                  description: 'Высокопроизводительный инференс для LLM',
+                  formula: 'vLLM: throughput = 10-20× vs standard',
+                  triz: 'Принцип 10: Предварительное исполнение' },
+
+                { id: 11, label: 'Federated Averaging', group: 'method', year: 2016,
+                  description: 'Усреднение параметров в федеративном обучении',
+                  formula: 'FedAvg: w = (1/K)∑w_k',
+                  triz: 'Принцип 11: Предварительная компенсация' },
+
+                { id: 12, label: 'Differential Privacy', group: 'technique', year: 2006,
+                  description: 'Математический подход к конфиденциальности данных',
+                  formula: 'DP: Pr[M(D) ∈ S] ≤ e^ε × Pr[M(D\') ∈ S]',
+                  triz: 'Принцип 12: Эквипотенциальность' },
+
+                { id: 13, label: 'Knowledge Distillation', group: 'technique', year: 2015,
+                  description: 'Передача знаний от большой модели к маленькой',
+                  formula: 'KD: L = αL_CE + (1-α)L_KL',
+                  triz: 'Принцип 13: Наоборот' },
+
+                { id: 14, label: 'Model Merging', group: 'method', year: 2022,
+                  description: 'Объединение нескольких обученных моделей',
+                  formula: 'Merge: θ_merged = αθ_1 + (1-α)θ_2',
+                  triz: 'Принцип 14: Сфероидальность' },
+
+                { id: 15, label: 'Attention Mechanism', group: 'architecture', year: 2017,
+                  description: 'Механизм взвешивания входных данных',
+                  formula: 'Attention: α = softmax(Q K^T / √d_k)',
+                  triz: 'Принцип 15: Динамичность' },
+
+                { id: 16, label: 'Cocoon Platform', group: 'application', year: 2024,
+                  description: 'Децентрализованная платформа для роевого ИИ на TON',
+                  formula: 'Cocoon: Agents × TON × Telegram',
+                  triz: 'Принцип 16: Частичное или избыточное действие' },
+
+                { id: 17, label: 'Telegram Bot Swarm', group: 'application', year: 2024,
+                  description: 'Рой ботов для обработки запросов в Telegram',
+                  formula: 'BotSwarm: request → agent_selection → response',
+                  triz: 'Принцип 17: Переход в другое измерение' },
+
+                { id: 18, label: 'GPU Cluster Optimization', group: 'application', year: 2023,
+                  description: 'Оптимизация распределённых GPU кластеров',
+                  formula: 'Cluster: Efficiency = Throughput / Power',
+                  triz: 'Принцип 18: Механическая вибрация' },
+
+                { id: 19, label: 'Real-time Inference', group: 'application', year: 2024,
+                  description: 'Низколатентный инференс для критичных приложений',
+                  formula: 'RTI: latency < 100ms, throughput > 1000 req/s',
+                  triz: 'Принцип 19: Периодическое действие' },
+
+                { id: 20, label: 'Multi-modal Agents', group: 'application', year: 2024,
+                  description: 'Агенты, работающие с текстом, изображениями и видео',
+                  formula: 'MultiModal: output = f(text, image, video, audio)',
+                  triz: 'Принцип 20: Непрерывность полезного действия' }
+            ],
+
+            edges: [
+                { from: 1, to: 2, type: 'evolves_to', label: 'эволюция' },
+                { from: 2, to: 3, type: 'evolves_to', label: 'эволюция' },
+                { from: 1, to: 4, type: 'enables', label: 'основа для' },
+                { from: 3, to: 6, type: 'enables', label: 'основа для' },
+                { from: 4, to: 11, type: 'implements', label: 'реализует' },
+                { from: 4, to: 12, type: 'requires', label: 'требует' },
+                { from: 11, to: 5, type: 'optimized_by', label: 'оптимизируется' },
+                { from: 6, to: 14, type: 'evolves_to', label: 'эволюция' },
+                { from: 15, to: 6, type: 'enables', label: 'основа для' },
+                { from: 4, to: 8, type: 'uses', label: 'использует' },
+                { from: 11, to: 9, type: 'uses', label: 'использует' },
+                { from: 6, to: 10, type: 'uses', label: 'использует' },
+                { from: 2, to: 16, type: 'enables', label: 'основа для' },
+                { from: 4, to: 16, type: 'enables', label: 'основа для' },
+                { from: 16, to: 17, type: 'implements', label: 'реализует' },
+                { from: 8, to: 18, type: 'enables', label: 'основа для' },
+                { from: 10, to: 19, type: 'enables', label: 'основа для' },
+                { from: 15, to: 20, type: 'enables', label: 'основа для' },
+                { from: 4, to: 5, type: 'contradiction', label: 'Коммуникация ↔ Точность', weight: 0.8 },
+                { from: 6, to: 12, type: 'contradiction', label: 'Производительность ↔ Приватность', weight: 0.7 },
+                { from: 8, to: 12, type: 'contradiction', label: 'Масштабируемость ↔ Безопасность', weight: 0.75 }
+            ]
+        };
+
+        const CATEGORIES = {
+            foundation: { color: '#4facfe', label: 'Фундамент' },
+            method: { color: '#43e97b', label: 'Метод' },
+            technique: { color: '#fa709a', label: 'Техника' },
+            architecture: { color: '#fee140', label: 'Архитектура' },
+            tool: { color: '#30cfd0', label: 'Инструмент' },
+            application: { color: '#a8edea', label: 'Приложение' }
+        };
+
+        const EDGE_TYPES = {
+            evolves_to: { color: '#4facfe', width: 3, dash: false },
+            enables: { color: '#43e97b', width: 3, dash: false },
+            implements: { color: '#fee140', width: 3, dash: false },
+            uses: { color: '#30cfd0', width: 2.5, dash: false },
+            requires: { color: '#fa709a', width: 2.5, dash: false },
+            optimized_by: { color: '#4facfe', width: 2, dash: true },
+            contradiction: { color: '#ff6b6b', width: 3, dash: true }
+        };
+
+        // ============ GRAPH VISUALIZATION ============
+        class GraphVisualization {
+            constructor() {
+                this.canvas = document.getElementById('graph-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.tooltip = document.getElementById('tooltip');
+
+                this.width = this.canvas.clientWidth;
+                this.height = this.canvas.clientHeight;
+                this.canvas.width = this.width * window.devicePixelRatio;
+                this.canvas.height = this.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+                this.transform = d3.zoomIdentity;
+                this.selectedNode = null;
+                this.hoveredNode = null;
+                this.physicsEnabled = true;
+
+                this.filters = {
+                    categories: new Set(),
+                    edgeTypes: new Set(),
+                    maxYear: 2025,
+                    searchQuery: ''
+                };
+
+                this.initializeGraph();
+                this.initializeUI();
+                this.setupEventHandlers();
+                this.animate();
+
+                window.addEventListener('resize', () => this.handleResize());
+            }
+
+            initializeGraph() {
+                // Создаем копию данных для фильтрации
+                this.nodes = GRAPH_DATA.nodes.map(n => ({
+                    ...n,
+                    x: this.width / 2 + (Math.random() - 0.5) * 400,
+                    y: this.height / 2 + (Math.random() - 0.5) * 400,
+                    vx: 0,
+                    vy: 0,
+                    visible: true,
+                    radius: 8
+                }));
+
+                this.edges = GRAPH_DATA.edges.map(e => ({
+                    ...e,
+                    source: this.nodes.find(n => n.id === e.from),
+                    target: this.nodes.find(n => n.id === e.to),
+                    visible: true
+                }));
+
+                // Настройка D3 force simulation
+                this.simulation = d3.forceSimulation(this.nodes)
+                    .force('link', d3.forceLink(this.edges)
+                        .id(d => d.id)
+                        .distance(120)
+                        .strength(0.5))
+                    .force('charge', d3.forceManyBody()
+                        .strength(-400)
+                        .distanceMax(400))
+                    .force('center', d3.forceCenter(this.width / 2, this.height / 2))
+                    .force('collision', d3.forceCollide().radius(30))
+                    .force('x', d3.forceX(this.width / 2).strength(0.05))
+                    .force('y', d3.forceY(this.height / 2).strength(0.05))
+                    .alphaDecay(0.01)
+                    .velocityDecay(0.3);
+
+                this.simulation.on('tick', () => this.render());
+            }
+
+            initializeUI() {
+                // Категории
+                const categoryFilters = document.getElementById('categoryFilters');
+                Object.entries(CATEGORIES).forEach(([key, cat]) => {
+                    const div = document.createElement('div');
+                    div.className = 'filter-item';
+                    div.innerHTML = `
+                        <input type="checkbox" id="cat-${key}" data-category="${key}">
+                        <label for="cat-${key}">
+                            <span class="color-indicator" style="background: ${cat.color}"></span>
+                            ${cat.label}
+                        </label>
+                    `;
+                    categoryFilters.appendChild(div);
+
+                    div.querySelector('input').addEventListener('change', () => this.applyFilters());
+                });
+
+                // Типы связей
+                const edgeFilters = document.getElementById('edgeFilters');
+                Object.entries(EDGE_TYPES).forEach(([key, type]) => {
+                    const div = document.createElement('div');
+                    div.className = 'filter-item';
+                    div.innerHTML = `
+                        <input type="checkbox" id="edge-${key}" data-edge="${key}">
+                        <label for="edge-${key}">
+                            <span class="color-indicator" style="background: ${type.color}"></span>
+                            ${key}
+                        </label>
+                    `;
+                    edgeFilters.appendChild(div);
+
+                    div.querySelector('input').addEventListener('change', () => this.applyFilters());
+                });
+
+                // Год
+                document.getElementById('yearSlider').addEventListener('input', (e) => {
+                    this.filters.maxYear = parseInt(e.target.value);
+                    document.getElementById('yearDisplay').textContent = e.target.value;
+                    this.applyFilters();
+                });
+
+                // Поиск
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.filters.searchQuery = e.target.value.toLowerCase();
+                    this.applyFilters();
+                });
+            }
+
+            setupEventHandlers() {
+                const zoom = d3.zoom()
+                    .scaleExtent([0.2, 4])
+                    .on('zoom', (event) => {
+                        this.transform = event.transform;
+                        this.render();
+                    });
+
+                d3.select(this.canvas).call(zoom);
+
+                // Drag
+                const drag = d3.drag()
+                    .subject(() => this.findNode(d3.event.x, d3.event.y))
+                    .on('start', (event) => {
+                        if (!event.active) this.simulation.alphaTarget(0.3).restart();
+                        event.subject.fx = event.subject.x;
+                        event.subject.fy = event.subject.y;
+                    })
+                    .on('drag', (event) => {
+                        event.subject.fx = event.x;
+                        event.subject.fy = event.y;
+                    })
+                    .on('end', (event) => {
+                        if (!event.active) this.simulation.alphaTarget(0);
+                        event.subject.fx = null;
+                        event.subject.fy = null;
+                    });
+
+                d3.select(this.canvas).call(drag);
+
+                // Mouse events
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('click', (e) => this.handleClick(e));
+            }
+
+            findNode(mx, my) {
+                const [x, y] = this.transform.invert([mx, my]);
+
+                for (let node of this.nodes) {
+                    if (!node.visible) continue;
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < node.radius + 5) {
+                        return node;
+                    }
+                }
+                return null;
+            }
+
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                const node = this.findNode(mx, my);
+
+                if (node !== this.hoveredNode) {
+                    this.hoveredNode = node;
+
+                    if (node) {
+                        this.tooltip.querySelector('.tooltip-title').textContent = node.label;
+                        this.tooltip.querySelector('.tooltip-desc').textContent = node.description;
+                        this.tooltip.classList.add('active');
+                        this.canvas.style.cursor = 'pointer';
+                    } else {
+                        this.tooltip.classList.remove('active');
+                        this.canvas.style.cursor = 'grab';
+                    }
+                }
+
+                if (this.tooltip.classList.contains('active')) {
+                    this.tooltip.style.left = (mx + 15) + 'px';
+                    this.tooltip.style.top = (my + 15) + 'px';
+                }
+            }
+
+            handleClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                const node = this.findNode(mx, my);
+
+                if (node) {
+                    this.selectNode(node);
+                }
+            }
+
+            selectNode(node) {
+                this.selectedNode = node;
+
+                const panel = document.getElementById('infoPanel');
+                panel.classList.add('active');
+
+                document.getElementById('infoTitle').textContent = node.label;
+                document.getElementById('infoCategory').textContent = CATEGORIES[node.group].label;
+                document.getElementById('infoYear').textContent = node.year;
+                document.getElementById('infoDescription').textContent = node.description;
+                document.getElementById('infoFormula').textContent = node.formula;
+                document.getElementById('infoTRIZ').textContent = node.triz;
+
+                // Connections
+                const connections = this.edges.filter(e =>
+                    e.source.id === node.id || e.target.id === node.id
+                );
+                document.getElementById('infoConnections').textContent =
+                    `${connections.length} связей`;
+            }
+
+            applyFilters() {
+                const activeCategories = new Set(
+                    Array.from(document.querySelectorAll('[data-category]:checked'))
+                        .map(cb => cb.dataset.category)
+                );
+
+                const activeEdgeTypes = new Set(
+                    Array.from(document.querySelectorAll('[data-edge]:checked'))
+                        .map(cb => cb.dataset.edge)
+                );
+
+                this.nodes.forEach(node => {
+                    let visible = true;
+
+                    if (activeCategories.size > 0 && !activeCategories.has(node.group)) {
+                        visible = false;
+                    }
+
+                    if (node.year > this.filters.maxYear) {
+                        visible = false;
+                    }
+
+                    if (this.filters.searchQuery &&
+                        !node.label.toLowerCase().includes(this.filters.searchQuery)) {
+                        visible = false;
+                    }
+
+                    node.visible = visible;
+                });
+
+                this.edges.forEach(edge => {
+                    let visible = true;
+
+                    if (!edge.source.visible || !edge.target.visible) {
+                        visible = false;
+                    }
+
+                    if (activeEdgeTypes.size > 0 && !activeEdgeTypes.has(edge.type)) {
+                        visible = false;
+                    }
+
+                    edge.visible = visible;
+                });
+
+                // Update stats
+                const visibleNodes = this.nodes.filter(n => n.visible).length;
+                const visibleEdges = this.edges.filter(e => e.visible).length;
+                document.getElementById('nodeCount').textContent = visibleNodes;
+                document.getElementById('edgeCount').textContent = visibleEdges;
+            }
+
+            render() {
+                this.ctx.save();
+                this.ctx.clearRect(0, 0, this.width, this.height);
+
+                this.ctx.translate(this.transform.x, this.transform.y);
+                this.ctx.scale(this.transform.k, this.transform.k);
+
+                // Draw edges
+                this.edges.forEach(edge => {
+                    if (!edge.visible) return;
+
+                    const style = EDGE_TYPES[edge.type];
+                    const alpha = edge.source === this.selectedNode || edge.target === this.selectedNode ? 1 : 0.6;
+
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = style.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                    this.ctx.lineWidth = style.width;
+
+                    if (style.dash) {
+                        this.ctx.setLineDash([8, 4]);
+                    } else {
+                        this.ctx.setLineDash([]);
+                    }
+
+                    // Draw arrow
+                    const dx = edge.target.x - edge.source.x;
+                    const dy = edge.target.y - edge.source.y;
+                    const angle = Math.atan2(dy, dx);
+                    const length = Math.sqrt(dx * dx + dy * dy);
+
+                    this.ctx.moveTo(edge.source.x, edge.source.y);
+                    this.ctx.lineTo(edge.target.x, edge.target.y);
+                    this.ctx.stroke();
+
+                    // Arrow head
+                    const arrowSize = 10;
+                    const arrowX = edge.target.x - Math.cos(angle) * edge.target.radius;
+                    const arrowY = edge.target.y - Math.sin(angle) * edge.target.radius;
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(arrowX, arrowY);
+                    this.ctx.lineTo(
+                        arrowX - arrowSize * Math.cos(angle - Math.PI / 6),
+                        arrowY - arrowSize * Math.sin(angle - Math.PI / 6)
+                    );
+                    this.ctx.lineTo(
+                        arrowX - arrowSize * Math.cos(angle + Math.PI / 6),
+                        arrowY - arrowSize * Math.sin(angle + Math.PI / 6)
+                    );
+                    this.ctx.closePath();
+                    this.ctx.fillStyle = style.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                    this.ctx.fill();
+                });
+
+                // Draw nodes
+                this.nodes.forEach(node => {
+                    if (!node.visible) return;
+
+                    const color = CATEGORIES[node.group].color;
+                    const isSelected = node === this.selectedNode;
+                    const isHovered = node === this.hoveredNode;
+                    const radius = isSelected ? node.radius * 1.5 : isHovered ? node.radius * 1.2 : node.radius;
+
+                    // Glow effect for selected/hovered
+                    if (isSelected || isHovered) {
+                        const gradient = this.ctx.createRadialGradient(node.x, node.y, radius, node.x, node.y, radius * 2);
+                        gradient.addColorStop(0, color + '60');
+                        gradient.addColorStop(1, color + '00');
+
+                        this.ctx.beginPath();
+                        this.ctx.arc(node.x, node.y, radius * 2, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = gradient;
+                        this.ctx.fill();
+                    }
+
+                    // Node circle
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = color;
+                    this.ctx.fill();
+
+                    // Border
+                    this.ctx.strokeStyle = isSelected ? '#fff' : color;
+                    this.ctx.lineWidth = isSelected ? 3 : 2;
+                    this.ctx.stroke();
+
+                    // Label
+                    this.ctx.font = isSelected ? 'bold 13px sans-serif' : '11px sans-serif';
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+
+                    // Label background
+                    const textWidth = this.ctx.measureText(node.label).width;
+                    this.ctx.fillStyle = 'rgba(10, 10, 15, 0.8)';
+                    this.ctx.fillRect(node.x - textWidth / 2 - 4, node.y + radius + 4, textWidth + 8, 16);
+
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.fillText(node.label, node.x, node.y + radius + 12);
+                });
+
+                this.ctx.restore();
+
+                // FPS counter
+                this.updateFPS();
+            }
+
+            updateFPS() {
+                if (!this.lastTime) this.lastTime = performance.now();
+                const now = performance.now();
+                const fps = Math.round(1000 / (now - this.lastTime));
+                this.lastTime = now;
+                document.getElementById('fps').textContent = fps;
+            }
+
+            animate() {
+                this.render();
+                requestAnimationFrame(() => this.animate());
+            }
+
+            resetView() {
+                d3.select(this.canvas)
+                    .transition()
+                    .duration(750)
+                    .call(d3.zoom().transform, d3.zoomIdentity);
+
+                this.simulation.alpha(1).restart();
+            }
+
+            togglePhysics() {
+                this.physicsEnabled = !this.physicsEnabled;
+                if (this.physicsEnabled) {
+                    this.simulation.alpha(1).restart();
+                } else {
+                    this.simulation.stop();
+                }
+            }
+
+            exportData() {
+                const data = {
+                    nodes: this.nodes.map(n => ({
+                        id: n.id,
+                        label: n.label,
+                        group: n.group,
+                        x: n.x,
+                        y: n.y
+                    })),
+                    edges: this.edges.map(e => ({
+                        from: e.source.id,
+                        to: e.target.id,
+                        type: e.type
+                    }))
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'knowledge-graph-export.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            handleResize() {
+                this.width = this.canvas.clientWidth;
+                this.height = this.canvas.clientHeight;
+                this.canvas.width = this.width * window.devicePixelRatio;
+                this.canvas.height = this.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+                this.simulation.force('center', d3.forceCenter(this.width / 2, this.height / 2));
+                this.simulation.force('x', d3.forceX(this.width / 2).strength(0.05));
+                this.simulation.force('y', d3.forceY(this.height / 2).strength(0.05));
+                this.simulation.alpha(0.3).restart();
+            }
+        }
+
+        // Initialize
+        const graphViz = new GraphVisualization();
+    </script>
+</body>
+</html>
