@@ -575,7 +575,17 @@
             moe: { name: '⭐ MoE', color: '#9f7aea' },
             merging: { name: '🔗 Model Merging', color: '#48bb78' },
             quantum: { name: '⚛️ Quantum-Inspired', color: '#4299e1' },
-            blockchain: { name: '⛓️ Blockchain', color: '#ed8936' }
+            blockchain: { name: '⛓️ Blockchain', color: '#ed8936' },
+            llm: { name: '🧠 LLM & Трансформеры', color: '#06b6d4' },
+            attention: { name: '👁️ Attention Mechanisms', color: '#ec4899' },
+            generative: { name: '🎨 Generative Models', color: '#8b5cf6' },
+            rag: { name: '📚 RAG & Knowledge', color: '#f59e0b' },
+            nlp_vision: { name: '🖼️ NLP & Vision', color: '#10b981' },
+            memory: { name: '💾 Memory & Optimization', color: '#6366f1' },
+            reasoning: { name: '🧩 Reasoning & Logic', color: '#ef4444' },
+            ssl: { name: '🔄 Self-Supervised Learning', color: '#14b8a6' },
+            monitoring: { name: '🔍 Monitoring & Ethics', color: '#d946ef' },
+            orchestration: { name: '⚡ Orchestration', color: '#f97316' }
         };
 
         const EDGE_TYPES = {
@@ -584,7 +594,13 @@
             resolves: { name: 'Решает', color: '#4ecdc4' },
             implements: { name: 'Реализует', color: '#95e1d3' },
             combines: { name: 'Комбинирует', color: '#f38181' },
-            contradiction: { name: 'Противоречие', color: '#ff6464' }
+            contradiction: { name: 'Противоречие', color: '#ff6464' },
+            enables_scaling: { name: 'Масштабирует', color: '#8b5cf6' },
+            reduces_memory: { name: 'Оптимизирует', color: '#10b981' },
+            improves_quality: { name: 'Улучшает', color: '#f59e0b' },
+            foundation_for: { name: 'Основа для', color: '#06b6d4' },
+            inspired_by: { name: 'Вдохновлено', color: '#ec4899' },
+            alternative_to: { name: 'Альтернатива', color: '#d946ef' }
         };
 
         // ============================================
@@ -629,7 +645,87 @@
 
                 // Blockchain
                 { id: 80, label: 'Blockchain\nFL', group: 'blockchain', year: 2021, title: 'Blockchain-enabled FL', description: 'Децентрализованная координация через smart contracts.', formula: 'hash(block_n) = SHA256(...)', triz: 'Распределение доверия - консенсус' },
-                { id: 81, label: 'PoETA', group: 'blockchain', year: 2025, title: 'Proof of Elapsed Time and Accuracy', description: 'Consensus mechanism использующий ML training как proof.', formula: 'reward \\propto accuracy \\times time', triz: 'Переориентация - польза от работы' }
+                { id: 81, label: 'PoETA', group: 'blockchain', year: 2025, title: 'Proof of Elapsed Time and Accuracy', description: 'Consensus mechanism использующий ML training как proof.', formula: 'reward \\propto accuracy \\times time', triz: 'Переориентация - польза от работы' },
+
+                // LLM & Трансформеры
+                { id: 100, label: 'Трансформер\nArchitecture', group: 'llm', year: 2017, title: 'Transformer Architecture', description: 'Революционная архитектура на основе Self-Attention. Основа современных LLM.', formula: 'Attention(Q, K, V) = softmax(\\frac{QK^T}{\\sqrt{d_k}})V', triz: 'Параллелизм - обработка всех позиций одновременно' },
+                { id: 101, label: 'BERT', group: 'llm', year: 2018, title: 'BERT - Bidirectional Encoder', description: 'Предварительная подготовка двусторонних трансформеров для понимания текста.', formula: 'loss = \\mathbb{E}[-(y\\log(\\hat{y}) + (1-y)\\log(1-\\hat{y}))]', triz: 'Двусторонность - использование контекста в обе стороны' },
+                { id: 102, label: 'GPT-1/2/3', group: 'llm', year: 2018, title: 'Generative Pre-trained Transformer', description: 'Автарегрессивные трансформеры для генерации текста. GPT-3: 175B параметров.', formula: 'P(x) = \\prod_{i=1}^n P(x_i | x_{<i})', triz: 'Масштабирование - экспоненциальный рост способностей' },
+                { id: 103, label: 'LLaMA', group: 'llm', year: 2023, title: 'Large Language Model Meta AI', description: 'Открытые LLM от Meta (7B-70B). База для множества приложений.', formula: 'params \\in [7B, 13B, 34B, 70B]', triz: 'Доступность - открытые веса' },
+                { id: 104, label: 'GPT-4\nMoE', group: 'llm', year: 2024, title: 'GPT-4 Mixture of Experts', description: 'Специализированная архитектура с экспертами для разных доменов.', formula: 'output = \\sum_{i}^n gate_i(x) \\cdot expert_i(x)', triz: 'Специализация - разные эксперты для разных типов задач' },
+                { id: 105, label: 'Mistral\n& Qwen', group: 'llm', year: 2023, title: 'Mistral & Qwen LLMs', description: 'Компактные и эффективные LLM. Mistral: 7B-8×7B MoE. Qwen: слой за слоем от Alibaba.', formula: 'efficiency \\propto \\frac{accuracy}{compute\\_budget}', triz: 'Оптимальность - лучшее качество при меньших затратах' },
+
+                // Attention Mechanisms
+                { id: 110, label: 'Self-Attention', group: 'attention', year: 2017, title: 'Self-Attention Mechanism', description: 'Позволяет каждому элементу взаимодействовать со всеми остальными. Основа Трансформера.', formula: 'Attention(Q, K, V) = softmax(\\frac{QK^T}{\\sqrt{d_k}})V', triz: 'Интеграция - каждый элемент видит всё' },
+                { id: 111, label: 'Multi-Head\nAttention', group: 'attention', year: 2017, title: 'Multi-Head Attention', description: 'Множество параллельных head\'ов для захвата разных аспектов взаимодействия.', formula: 'MultiHead(Q,K,V) = Concat(h_1,...,h_h)W^O', triz: 'Резонанс - множество параллельных паттернов' },
+                { id: 112, label: 'Cross-Attention', group: 'attention', year: 2018, title: 'Cross-Attention', description: 'Взаимодействие между разными модальностями или последовательностями.', formula: 'Attention(Q_{mod1}, K_{mod2}, V_{mod2})', triz: 'Координация - связывание разных источников' },
+                { id: 113, label: 'Flash\nAttention', group: 'attention', year: 2022, title: 'Flash Attention', description: 'Оптимальное использование GPU памяти. 10× ускорение attention.', formula: 'IO = O(N^2), время = O(N^2/M)', triz: 'Оптимизация - уменьшение обращений к памяти' },
+                { id: 114, label: 'Positional\nEncoding', group: 'attention', year: 2017, title: 'Positional Encoding', description: 'Кодирование позиции элемента в последовательности.', formula: 'PE(pos, 2i) = sin(pos/10000^{2i/d}), PE(pos, 2i+1) = cos(...)', triz: 'Позиционирование - метрики расстояния' },
+                { id: 115, label: 'Linear\nAttention', group: 'attention', year: 2020, title: 'Linear Attention', description: 'O(n) сложность вместо O(n²). Альтернатива классическому attention.', formula: 'Attention(Q,K,V) \\approx \\phi(Q)(\\phi(K)^T V)', triz: 'Линеаризация - переход от квадратичной к линейной' },
+                { id: 116, label: 'Sparse\nAttention', group: 'attention', year: 2019, title: 'Sparse Attention Patterns', description: 'Использование только важных взаимодействий между элементами.', formula: '\\text{attend}(i, j) = \\mathbb{1}[pattern(i,j)]', triz: 'Избирательность - фокус на важном' },
+
+                // Generative Models
+                { id: 120, label: 'Autoregressive\nModels', group: 'generative', year: 2017, title: 'Autoregressive Generation', description: 'Генерация одного элемента за раз, обусловленная предыдущими.', formula: 'P(x) = \\prod_i P(x_i | x_{<i})', triz: 'Последовательность - порядок имеет значение' },
+                { id: 121, label: 'VAE\n(Variational)', group: 'generative', year: 2013, title: 'Variational Autoencoder', description: 'Вероятностный генеративный модель с латентным пространством.', formula: 'ELBO = \\mathbb{E}_q[\\log p(x|z)] - KL(q(z|x)||p(z))', triz: 'Сжатие - информация в латентном пространстве' },
+                { id: 122, label: 'Diffusion\nModels', group: 'generative', year: 2020, title: 'Diffusion Models', description: 'Генерация через постепенное удаление шума. SOTA для изображений (DALL-E, Stable Diffusion).', formula: 'q(x_t|x_0) = \\sqrt{\\bar{\\alpha}_t}x_0 + \\sqrt{1-\\bar{\\alpha}_t}\\epsilon', triz: 'Деградация-восстановление - симметричный процесс' },
+                { id: 123, label: 'GAN\nArchitecture', group: 'generative', year: 2014, title: 'Generative Adversarial Networks', description: 'Соревнование генератора и дискриминатора. Основа для синтеза данных.', formula: '\\min_G \\max_D \\mathbb{E}[\\log D(x)] + \\mathbb{E}[\\log(1-D(G(z)))]', triz: 'Конфликт - противоречие ведёт к качеству' },
+                { id: 124, label: 'Flow-Based\nModels', group: 'generative', year: 2018, title: 'Flow-Based Generative Models', description: 'Инвертируемые трансформации для точного моделирования вероятности.', formula: 'p(x) = p(z) |\\det \\frac{\\partial f^{-1}}{\\partial x}|', triz: 'Обратимость - полная информация' },
+                { id: 125, label: 'Autoregressive\nFlow', group: 'generative', year: 2019, title: 'Autoregressive Flow', description: 'Комбинация потоков и авторегрессии. PixelCNN++, Glow.', formula: 'f(x) = transform\\_sequentially(x)', triz: 'Комбинация - синтез разных подходов' },
+
+                // RAG & Knowledge
+                { id: 130, label: 'Vector\nDatabases', group: 'rag', year: 2020, title: 'Vector Databases', description: 'Хранение и поиск в эмбедингах. Pinecone, Weaviate, Milvus.', formula: 'd(q, d) = \\cos(embed(q), embed(d))', triz: 'Плотность - компактное хранение семантики' },
+                { id: 131, label: 'Retrieval\nAugmented Gen', group: 'rag', year: 2020, title: 'Retrieval-Augmented Generation', description: 'Извлечение релевантных документов перед генерацией. Улучшает точность.', formula: 'output = LLM(query, retrieve(query))', triz: 'Расширение знаний - внешняя память' },
+                { id: 132, label: 'Knowledge\nGraphs', group: 'rag', year: 2012, title: 'Knowledge Graphs', description: 'Структурированное представление сущностей и их отношений.', formula: '(subject, predicate, object) \\in KG', triz: 'Структурирование - явная формализация знаний' },
+                { id: 133, label: 'Semantic\nSearch', group: 'rag', year: 2018, title: 'Semantic Search', description: 'Поиск по смыслу, а не по точному совпадению слов.', formula: 'score(query, doc) = sim(embed(query), embed(doc))', triz: 'Семантика - смысл важнее чем форма' },
+                { id: 134, label: 'Link\nPrediction', group: 'rag', year: 2014, title: 'Knowledge Graph Link Prediction', description: 'Предсказание отсутствующих отношений в графе.', formula: 'P(rel | s, o) = softmax(score(s, rel, o))', triz: 'Экстраполяция - предсказание новых связей' },
+                { id: 135, label: 'Embedding\nLearning', group: 'rag', year: 2013, title: 'Entity & Relation Embeddings', description: 'Обучение векторных представлений для KG. TransE, DistMult.', formula: 'score(h, r, t) = ||h + r - t||_2^2', triz: 'Компрессия - высокомерность → низкомерность' },
+
+                // NLP & Vision
+                { id: 140, label: 'Tokenization\n& BPE', group: 'nlp_vision', year: 2015, title: 'Tokenization & Byte-Pair Encoding', description: 'Разделение текста на токены. BPE - статистическое слияние частых пар.', formula: 'merge(a, b) = \\arg\\max freq(a+b)', triz: 'Оптимизация - найти оптимальный размер единицы' },
+                { id: 141, label: 'NER & POS\nTagging', group: 'nlp_vision', year: 2003, title: 'Named Entity & POS Recognition', description: 'Распознавание сущностей и частей речи. Основные NLP задачи.', formula: 'tag = argmax_t P(t | x, context)', triz: 'Категоризация - классификация по типам' },
+                { id: 142, label: 'Vision\nTransformers', group: 'nlp_vision', year: 2020, title: 'Vision Transformers (ViT)', description: 'Применение трансформеров к изображениям. Разбиение на патчи.', formula: 'z_0 = [patch\\_embed(P), \\text{cls token}, pos\\_embed]', triz: 'Универсальность - один архитектура для разных модальностей' },
+                { id: 143, label: 'CNN\nArchitectures', group: 'nlp_vision', year: 2012, title: 'Convolutional Neural Networks', description: 'Основа для computer vision. ResNet, VGG, InceptionNet.', formula: 'y = ReLU(W * x + b)', triz: 'Локальность - соседние пиксели тесно связаны' },
+                { id: 144, label: 'Object\nDetection', group: 'nlp_vision', year: 2015, title: 'Object Detection', description: 'Обнаружение и локализация объектов. YOLO, Faster R-CNN, RetinaNet.', formula: 'bbox = (x, y, w, h), conf = P(obj), cls = \\arg\\max P(class)', triz: 'Локализация - найти не только что, но и где' },
+                { id: 145, label: 'Semantic\nSegmentation', group: 'nlp_vision', year: 2014, title: 'Semantic Segmentation', description: 'Классификация каждого пикселя. FCN, U-Net, DeepLab.', formula: 'class_{pixel} = \\arg\\max P(c | features)', triz: 'Детализация - пиксель-уровневое понимание' },
+
+                // Memory & Optimization
+                { id: 150, label: 'LoRA\nAdaptation', group: 'memory', year: 2021, title: 'Low-Rank Adaptation', description: 'Адаптация больших моделей с минимальными параметрами. 1% параметров = 90% эффективности.', formula: '\\Delta W = BA, \\text{где } A \\in \\mathbb{R}^{r \\times k}, B \\in \\mathbb{R}^{d \\times r}', triz: 'Декомпозиция - низкоранговое разложение' },
+                { id: 151, label: 'QLoRA', group: 'memory', year: 2023, title: 'Quantized LoRA', description: 'Квантизированная версия LoRA. Ещё меньше памяти.', formula: '4-bit + LoRA = 15% от памяти базовой модели', triz: 'Интеграция - квантизация + адаптация' },
+                { id: 152, label: 'Mixed\nPrecision', group: 'memory', year: 2017, title: 'Mixed Precision Training', description: 'Использование FP16 и FP32 для скорости и точности. 2-3× ускорение.', formula: 'loss = \\text{scale} \\times forward(FP16(x))', triz: 'Адаптация - разная точность где нужна' },
+                { id: 153, label: 'Gradient\nCheckpointing', group: 'memory', year: 2016, title: 'Gradient Checkpointing', description: 'Сохранение только важных активаций. Снижает память в 10 раз.', formula: 'memory \\approx O(\\sqrt{depth})', triz: 'Экономия - торговля вычислением на память' },
+                { id: 154, label: 'PagedAttention', group: 'memory', year: 2023, title: 'PagedAttention (vLLM)', description: 'Диспетчеризация памяти KV-cache как в ОС. 24× пропускная способность.', formula: 'kv\\_cache = pages[batch]', triz: 'Виртуализация - управление памятью как ОС' },
+                { id: 155, label: 'Quantization\n(INT8/INT4)', group: 'memory', year: 2020, title: 'Quantization', description: 'Снижение битности: FP32→FP8→INT8→INT4. 4-8× сжатие.', formula: 'q = round(\\frac{x - min}{max - min} \\times 2^b)', triz: 'Дискретизация - уменьшение диапазона' },
+
+                // Reasoning & Logic
+                { id: 160, label: 'Chain-of\nThought', group: 'reasoning', year: 2022, title: 'Chain-of-Thought Prompting', description: 'Побуждение модели объяснять промежуточные шаги. Повышает точность в 5-10 раз.', formula: 'reasoning = \\text{trace}(step_1, step_2, ..., answer)', triz: 'Разложение - разбиение сложной задачи' },
+                { id: 161, label: 'Tree-of\nThought', group: 'reasoning', year: 2023, title: 'Tree-of-Thought', description: 'Исследование множества путей рассуждения и выбор лучшего.', formula: 'solution = best\\_path(tree\\_search())', triz: 'Разветвление - исследование множества вариантов' },
+                { id: 162, label: 'Causal\nInference', group: 'reasoning', year: 2000, title: 'Causal Inference', description: 'Определение причинных связей, а не просто корреляций.', formula: 'P(y|do(X=x)) \\neq P(y|X=x)', triz: 'Причинность - различать причину и следствие' },
+                { id: 163, label: 'Symbolic\nReasoning', group: 'reasoning', year: 1980, title: 'Symbolic Reasoning', description: 'Логические системы и правила вывода. Интеграция с нейросетями (Neuro-Symbolic).', formula: 'conclusion = \\{r | \\text{apply}(r, facts)\\}', triz: 'Формализм - явные логические правила' },
+                { id: 164, label: 'Program\nSynthesis', group: 'reasoning', year: 2017, title: 'Program Synthesis', description: 'Автоматическое написание программ из примеров или спецификаций.', formula: 'program = \\text{synthesize}(examples, constraints)', triz: 'Творчество - генерация правильного кода' },
+                { id: 165, label: 'Multi-Step\nPlanning', group: 'reasoning', year: 1985, title: 'Multi-Step Planning', description: 'Планирование последовательности действий для достижения цели.', formula: 'plan = [action_1, action_2, ..., action_n]', triz: 'Последовательность - явный порядок действий' },
+
+                // Self-Supervised Learning
+                { id: 170, label: 'Contrastive\nLearning', group: 'ssl', year: 2020, title: 'Contrastive Learning', description: 'Обучение путём притягивания подобных и отталкивания неподобных. SimCLR, MoCo, BYOL.', formula: 'loss = -log \\frac{exp(sim(a,p)/\\tau)}{\\sum exp(sim(a,x)/\\tau)}', triz: 'Различие - контраст создаёт смысл' },
+                { id: 171, label: 'Masked Language\nModeling', group: 'ssl', year: 2018, title: 'Masked Language Modeling', description: 'Скрытие слов и предсказание их. Основа BERT.', formula: 'loss = -\\log P(x_masked | context)', triz: 'Загадка - предсказание скрытого' },
+                { id: 172, label: 'Momentum\nContrast', group: 'ssl', year: 2020, title: 'Momentum Contrast (MoCo)', description: 'Использование momentum encoder для большей очереди отрицательных примеров.', formula: 'queue = [z_1, z_2, ..., z_K]', triz: 'Инерция - медленное обновление памяти' },
+                { id: 173, label: 'Bootstrap\nYour Own Latent', group: 'ssl', year: 2020, title: 'BYOL', description: 'Обучение без отрицательных примеров! Только позитивное притяжение.', formula: 'loss = ||z_1 - sg(z_2)||^2', triz: 'Минимализм - выучить структуру только из положительных примеров' },
+                { id: 174, label: 'Data2Vec\nUnified SSL', group: 'ssl', year: 2022, title: 'Data2Vec - Unified SSL', description: 'Единый подход SSL для всех модальностей. Предсказание представлений.', formula: 'loss = ||h_student - sg(h_teacher)||^2', triz: 'Универсальность - один подход для всех' },
+
+                // Monitoring & Ethics
+                { id: 180, label: 'Interpretability\nExplainability', group: 'monitoring', year: 2016, title: 'Interpretability & Explainability', description: 'Понимание решений модели. LIME, SHAP, attention visualization.', formula: 'contribution_i = \\phi_i(f, x)', triz: 'Прозрачность - видеть внутренний процесс' },
+                { id: 181, label: 'Model\nMonitoring', group: 'monitoring', year: 2015, title: 'Model Monitoring & Observability', description: 'Отслеживание производительности в продакшене. Drift detection, anomaly detection.', formula: 'drift = KL(P_{train}(x) || P_{prod}(x))', triz: 'Бдительность - непрерывный контроль' },
+                { id: 182, label: 'Adversarial\nRobustness', group: 'monitoring', year: 2013, title: 'Adversarial Robustness', description: 'Защита от враждебных примеров. Adversarial training, certified defenses.', formula: '\\max_\\delta ||\\delta||_p \\leq \\epsilon subject\\ to\\ loss(x+\\delta)', triz: 'Устойчивость - защита от атак' },
+                { id: 183, label: 'Fairness &\nBias Mitigation', group: 'monitoring', year: 2017, title: 'Fairness & Bias Mitigation', description: 'Справедливое обращение для разных групп. Demographic parity, equalized odds.', formula: 'P(\\hat{y}=1|A=0) = P(\\hat{y}=1|A=1)', triz: 'Справедливость - равность перед моделью' },
+                { id: 184, label: 'Uncertainty\nQuantification', group: 'monitoring', year: 2011, title: 'Uncertainty Quantification', description: 'Оценка доверия к предсказаниям. Bayesian methods, ensemble methods.', formula: 'P(y|x) \\approx \\frac{1}{M}\\sum_i model_i(x)', triz: 'Скромность - знать о своих пределах' },
+                { id: 185, label: 'Concept\nActivation', group: 'monitoring', year: 2018, title: 'Concept Activation Vectors', description: 'Интерпретация в терминах высокоуровневых концепций, а не пикселей.', formula: 'concept = projection(activations)', triz: 'Абстракция - человеческие концепции' },
+
+                // Orchestration
+                { id: 190, label: 'Agent\nFrameworks', group: 'orchestration', year: 2023, title: 'AI Agent Frameworks', description: 'LangChain, AutoGPT, ReAct. Координация инструментов и действий.', formula: 'agent = \\text{loop}(\\text{think}, \\text{act}, \\text{observe})', triz: 'Цикл - обратная связь направляет действия' },
+                { id: 191, label: 'Workflow\nOrchestration', group: 'orchestration', year: 2020, title: 'Workflow Orchestration', description: 'Управление сложными конвейерами. Airflow, Prefect, Dagster.', formula: 'dag = (tasks, edges, dependencies)', triz: 'Граф - явная структура зависимостей' },
+                { id: 192, label: 'Task\nScheduling', group: 'orchestration', year: 1960, title: 'Task Scheduling & Resource Allocation', description: 'Оптимальное распределение задач на ресурсы.', formula: 'makespan = \\max_i \\sum_j t_{ij}', triz: 'Балансировка - равномерное распределение' },
+                { id: 193, label: 'API\nComposition', group: 'orchestration', year: 2010, title: 'API Composition & Service Chaining', description: 'Комбинирование множества сервисов для сложного функционала.', formula: 'result = service_n(service_{n-1}(...(service_1(input))))', triz: 'Модульность - комбинирование простых блоков' },
+                { id: 194, label: 'Distributed\nExecution', group: 'orchestration', year: 2009, title: 'Distributed Execution Engines', description: 'Spark, Dask, Ray. Параллельное выполнение на кластере.', formula: 'total\\_time = \\frac{total\\_work}{num\\_workers} + communication\\_cost', triz: 'Параллелизм - множество рабочих одновременно' },
+                { id: 195, label: 'Model\nServing', group: 'orchestration', year: 2015, title: 'Model Serving & Inference', description: 'Развёртывание моделей в продакшен. TensorServing, KServe, vLLM.', formula: 'throughput = \\frac{batch\\_size}{latency}', triz: 'Масштабируемость - много запросов одновременно' }
             ],
             
             edges: [
@@ -671,7 +767,114 @@
 
                 // ПРОТИВОРЕЧИЯ (не как узлы, а как рёбра с аннотацией)
                 { from: 20, to: 30, type: 'contradiction', label: 'Communication ↔ Accuracy', weight: 0.8 },
-                { from: 24, to: 31, type: 'contradiction', label: 'Compression ↔ Quality', weight: 0.9 }
+                { from: 24, to: 31, type: 'contradiction', label: 'Compression ↔ Quality', weight: 0.9 },
+
+                // Transformer → LLM
+                { from: 100, to: 101, type: 'implements', label: 'foundation' },
+                { from: 100, to: 102, type: 'implements', label: 'foundation' },
+                { from: 100, to: 103, type: 'implements', label: 'foundation' },
+                { from: 102, to: 104, type: 'evolves_to', label: '2024' },
+                { from: 102, to: 105, type: 'evolves_to', label: '2023' },
+
+                // Self-Attention → Attention Mechanisms
+                { from: 100, to: 110, type: 'requires', label: 'core' },
+                { from: 110, to: 111, type: 'evolves_to', label: 'parallel' },
+                { from: 110, to: 112, type: 'evolves_to', label: 'multi-modal' },
+                { from: 111, to: 113, type: 'reduces_memory', label: '10x speedup' },
+                { from: 110, to: 114, type: 'requires', label: 'encoding' },
+                { from: 110, to: 115, type: 'alternative_to', label: 'O(n)' },
+                { from: 110, to: 116, type: 'alternative_to', label: 'sparse' },
+
+                // LLM → Attention
+                { from: 101, to: 110, type: 'foundation_for', label: 'core' },
+                { from: 102, to: 111, type: 'uses', label: 'multi-head' },
+                { from: 103, to: 111, type: 'uses', label: 'multi-head' },
+                { from: 104, to: 111, type: 'uses', label: 'gating' },
+
+                // Generative Models
+                { from: 100, to: 120, type: 'foundation_for', label: 'sequence' },
+                { from: 102, to: 120, type: 'implements', label: 'autoregressive' },
+                { from: 120, to: 121, type: 'alternative_to', label: 'VAE' },
+                { from: 120, to: 122, type: 'alternative_to', label: 'diffusion' },
+                { from: 120, to: 123, type: 'alternative_to', label: 'GAN' },
+                { from: 122, to: 125, type: 'combines', label: 'flow' },
+                { from: 121, to: 124, type: 'inspired_by', label: 'probability' },
+                { from: 123, to: 124, type: 'alternative_to', label: 'flow' },
+
+                // Memory Optimization → LLM
+                { from: 150, to: 102, type: 'reduces_memory', label: '10x less params' },
+                { from: 150, to: 103, type: 'reduces_memory', label: 'adapter' },
+                { from: 151, to: 150, type: 'reduces_memory', label: '4-bit' },
+                { from: 151, to: 103, type: 'reduces_memory', label: 'QLoRA-LLaMA' },
+                { from: 152, to: 102, type: 'improves_quality', label: '2-3x speed' },
+                { from: 153, to: 102, type: 'reduces_memory', label: '10x less' },
+                { from: 154, to: 102, type: 'enables_scaling', label: '24x throughput' },
+                { from: 155, to: 102, type: 'reduces_memory', label: '4-8x' },
+                { from: 154, to: 195, type: 'foundation_for', label: 'serving' },
+
+                // Vision & NLP
+                { from: 100, to: 142, type: 'inspired_by', label: 'architecture' },
+                { from: 142, to: 143, type: 'alternative_to', label: 'CNN' },
+                { from: 143, to: 144, type: 'foundation_for', label: 'detection' },
+                { from: 143, to: 145, type: 'foundation_for', label: 'segmentation' },
+                { from: 140, to: 101, type: 'enables_scaling', label: 'tokens' },
+                { from: 140, to: 102, type: 'enables_scaling', label: 'vocabulary' },
+                { from: 141, to: 101, type: 'foundation_for', label: 'encoding' },
+                { from: 142, to: 144, type: 'evolves_to', label: 'detection' },
+
+                // RAG & Knowledge
+                { from: 102, to: 131, type: 'foundation_for', label: 'generation' },
+                { from: 130, to: 131, type: 'enables_scaling', label: 'retrieval' },
+                { from: 132, to: 133, type: 'foundation_for', label: 'semantic' },
+                { from: 132, to: 134, type: 'foundation_for', label: 'link pred' },
+                { from: 132, to: 135, type: 'foundation_for', label: 'embedding' },
+                { from: 133, to: 131, type: 'improves_quality', label: 'search' },
+                { from: 135, to: 130, type: 'implements', label: 'vector' },
+
+                // Reasoning & Logic
+                { from: 102, to: 160, type: 'foundation_for', label: 'thinking' },
+                { from: 160, to: 161, type: 'evolves_to', label: 'tree search' },
+                { from: 160, to: 162, type: 'inspired_by', label: 'causality' },
+                { from: 163, to: 160, type: 'combines', label: 'neuro-symbolic' },
+                { from: 160, to: 164, type: 'foundation_for', label: 'code' },
+                { from: 165, to: 190, type: 'foundation_for', label: 'agents' },
+
+                // Self-Supervised Learning
+                { from: 102, to: 171, type: 'foundation_for', label: 'pretraining' },
+                { from: 101, to: 171, type: 'implements', label: 'MLM' },
+                { from: 170, to: 171, type: 'alternative_to', label: 'contrastive' },
+                { from: 170, to: 172, type: 'evolves_to', label: 'momentum' },
+                { from: 170, to: 173, type: 'evolves_to', label: 'BYOL' },
+                { from: 173, to: 174, type: 'evolves_to', label: 'unified' },
+                { from: 142, to: 170, type: 'uses', label: 'vision SSL' },
+                { from: 101, to: 170, type: 'uses', label: 'NLP SSL' },
+
+                // Monitoring & Ethics
+                { from: 102, to: 180, type: 'requires', label: 'interpretability' },
+                { from: 102, to: 181, type: 'requires', label: 'monitoring' },
+                { from: 102, to: 182, type: 'requires', label: 'robustness' },
+                { from: 102, to: 183, type: 'requires', label: 'fairness' },
+                { from: 102, to: 184, type: 'requires', label: 'uncertainty' },
+                { from: 142, to: 180, type: 'requires', label: 'vision interp' },
+
+                // Orchestration
+                { from: 102, to: 190, type: 'foundation_for', label: 'agents' },
+                { from: 190, to: 191, type: 'foundation_for', label: 'workflows' },
+                { from: 191, to: 192, type: 'uses', label: 'scheduling' },
+                { from: 191, to: 193, type: 'combines', label: 'services' },
+                { from: 194, to: 191, type: 'foundation_for', label: 'distributed' },
+                { from: 195, to: 102, type: 'implements', label: 'production' },
+                { from: 195, to: 103, type: 'implements', label: 'LLaMA deploy' },
+                { from: 190, to: 195, type: 'foundation_for', label: 'inference' },
+
+                // Integration with old nodes
+                { from: 100, to: 20, type: 'evolves_to', label: 'modern FL' },
+                { from: 102, to: 24, type: 'evolves_to', label: 'DiLoCo' },
+                { from: 150, to: 20, type: 'reduces_memory', label: 'LoRA-FL' },
+                { from: 154, to: 30, type: 'alternative_to', label: 'paging' },
+                { from: 131, to: 51, type: 'combines', label: 'RAG+MoE' },
+                { from: 160, to: 41, type: 'foundation_for', label: 'reasoning agents' },
+                { from: 170, to: 11, type: 'improves_quality', label: 'pretraining' }
             ]
         };
 
