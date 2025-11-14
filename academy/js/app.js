@@ -827,7 +827,7 @@ n - общий размер данных
                     }
                 },
 
-                // Продолжаем уроки 5-10...
+                // УРОК 5: Практическая реализация FedAvg
                 {
                     id: 'lesson-5',
                     number: 5,
@@ -835,9 +835,257 @@ n - общий размер данных
                         ru: 'Практика: Реализация FedAvg с PyTorch',
                         en: 'Practice: FedAvg Implementation with PyTorch'
                     },
+                    description: {
+                        ru: 'Полная реализация федеративного обучения с нуля',
+                        en: 'Complete federated learning implementation from scratch'
+                    },
                     difficulty: 'intermediate',
-                    duration: { ru: '3 часа', en: '3 hours' }
+                    duration: { ru: '3 часа', en: '3 hours' },
+                    topics: ['pytorch', 'fedavg', 'implementation'],
+                    content: {
+                        ru: `
+# Урок 5: Реализация FedAvg с PyTorch
+
+## 🎯 Цели урока
+- Реализовать полноценный FedAvg алгоритм
+- Научиться симулировать федеративных клиентов
+- Визуализировать процесс обучения
+
+## 📚 Архитектура системы
+
+### Компоненты:
+1. **Parameter Server** - хранит глобальную модель
+2. **Clients** - локальное обучение на своих данных
+3. **Aggregator** - усредняет обновления
+
+## 💻 Полная реализация
+
+### Шаг 1: Модель
+
+\`\`\`python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class SimpleNet(nn.Module):
+    """Простая CNN для MNIST"""
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.max_pool2d(x, 2)
+        x = torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        return self.fc2(x)
+\`\`\`
+
+### Шаг 2: Федеративный клиент
+
+\`\`\`python
+class FederatedClient:
+    def __init__(self, client_id, data_loader, device='cpu'):
+        self.client_id = client_id
+        self.data_loader = data_loader
+        self.device = device
+        self.model = None
+
+    def set_parameters(self, parameters):
+        """Получаем глобальные веса"""
+        self.model = SimpleNet().to(self.device)
+        self.model.load_state_dict(parameters)
+
+    def train(self, epochs=5, lr=0.01):
+        """Локальное обучение"""
+        if self.model is None:
+            raise ValueError("Model not initialized")
+
+        self.model.train()
+        optimizer = torch.optim.SGD(
+            self.model.parameters(),
+            lr=lr
+        )
+        criterion = nn.CrossEntropyLoss()
+
+        for epoch in range(epochs):
+            total_loss = 0
+            for batch_idx, (data, target) in enumerate(self.data_loader):
+                data, target = data.to(self.device), target.to(self.device)
+
+                optimizer.zero_grad()
+                output = self.model(data)
+                loss = criterion(output, target)
+                loss.backward()
+                optimizer.step()
+
+                total_loss += loss.item()
+
+            avg_loss = total_loss / len(self.data_loader)
+            print(f"Client {self.client_id}, Epoch {epoch+1}: Loss = {avg_loss:.4f}")
+
+        return self.get_parameters()
+
+    def get_parameters(self):
+        """Возвращаем обученные веса"""
+        return self.model.state_dict()
+\`\`\`
+
+### Шаг 3: FedAvg сервер
+
+\`\`\`python
+class FedAvgServer:
+    def __init__(self, model_fn, num_clients):
+        self.global_model = model_fn()
+        self.num_clients = num_clients
+        self.clients = []
+        self.round = 0
+
+    def aggregate(self, client_parameters, client_sizes):
+        """FedAvg агрегация"""
+        total_size = sum(client_sizes)
+
+        # Инициализируем усредненные параметры
+        avg_params = {}
+
+        # Получаем ключи параметров
+        param_keys = client_parameters[0].keys()
+
+        for key in param_keys:
+            # Взвешенное усреднение
+            avg_params[key] = sum(
+                params[key] * (size / total_size)
+                for params, size in zip(client_parameters, client_sizes)
+            )
+
+        # Обновляем глобальную модель
+        self.global_model.load_state_dict(avg_params)
+        return avg_params
+
+    def get_global_parameters(self):
+        return self.global_model.state_dict()
+
+    def evaluate(self, test_loader, device='cpu'):
+        """Оценка глобальной модели"""
+        self.global_model.eval()
+        self.global_model.to(device)
+
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for data, target in test_loader:
+                data, target = data.to(device), target.to(device)
+                output = self.global_model(data)
+                pred = output.argmax(dim=1)
+                correct += pred.eq(target).sum().item()
+                total += target.size(0)
+
+        accuracy = 100. * correct / total
+        return accuracy
+\`\`\`
+
+### Шаг 4: Главный цикл обучения
+
+\`\`\`python
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, random_split
+
+# Загрузка MNIST
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,))
+])
+
+train_dataset = torchvision.datasets.MNIST(
+    './data', train=True, download=True, transform=transform
+)
+
+test_dataset = torchvision.datasets.MNIST(
+    './data', train=False, transform=transform
+)
+
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Разделяем данные между клиентами (Non-IID симуляция)
+NUM_CLIENTS = 10
+client_datasets = random_split(
+    train_dataset,
+    [len(train_dataset) // NUM_CLIENTS] * NUM_CLIENTS
+)
+
+# Создаем клиентов
+clients = []
+for i, dataset in enumerate(client_datasets):
+    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    client = FederatedClient(i, loader)
+    clients.append(client)
+
+# Создаем сервер
+server = FedAvgServer(SimpleNet, NUM_CLIENTS)
+
+# FEDERATED LEARNING!
+NUM_ROUNDS = 20
+CLIENT_EPOCHS = 5
+
+print("🚀 Начинаем федеративное обучение!\\n")
+
+for round_num in range(NUM_ROUNDS):
+    print(f"\\n{'='*50}")
+    print(f"Round {round_num + 1}/{NUM_ROUNDS}")
+    print(f"{'='*50}")
+
+    # 1. Раздаем глобальную модель клиентам
+    global_params = server.get_global_parameters()
+
+    # 2. Клиенты обучают локально
+    client_updates = []
+    client_sizes = []
+
+    for client in clients:
+        client.set_parameters(global_params)
+        updated_params = client.train(epochs=CLIENT_EPOCHS)
+        client_updates.append(updated_params)
+        client_sizes.append(len(client.data_loader.dataset))
+
+    # 3. Сервер агрегирует обновления
+    server.aggregate(client_updates, client_sizes)
+
+    # 4. Оценка глобальной модели
+    accuracy = server.evaluate(test_loader)
+    print(f"\\n📊 Global Model Accuracy: {accuracy:.2f}%")
+
+print("\\n✅ Обучение завершено!")
+\`\`\`
+
+## 📊 Ожидаемые результаты
+
+После 20 раундов:
+- Accuracy: ~95-98% на MNIST
+- Каждый клиент видит только 10% данных
+- Глобальная модель лучше любой локальной
+
+## 🎯 Практическое задание
+
+Модифицируйте код для Non-IID данных:
+- Каждый клиент видит только определенные цифры (0-4 или 5-9)
+- Наблюдайте, как это влияет на сходимость
+- Попробуйте разные стратегии агрегации
+`,
+                        en: 'Lesson 5: FedAvg Implementation with PyTorch...'
+                    },
+                    codeExample: {
+                        title: { ru: 'Полный пример', en: 'Complete Example' },
+                        code: '# See content above'
+                    }
                 },
+
+                // УРОК 6: Ray - распределенные вычисления
                 {
                     id: 'lesson-6',
                     number: 6,
@@ -845,9 +1093,244 @@ n - общий размер данных
                         ru: 'Ray: Распределенные вычисления на Python',
                         en: 'Ray: Distributed Computing in Python'
                     },
+                    description: {
+                        ru: 'Масштабирование ML с Ray Framework',
+                        en: 'Scaling ML with Ray Framework'
+                    },
                     difficulty: 'intermediate',
-                    duration: { ru: '3 часа', en: '3 hours' }
+                    duration: { ru: '3 часа', en: '3 hours' },
+                    topics: ['ray', 'distributed', 'parallelism'],
+                    content: {
+                        ru: `
+# Урок 6: Ray Framework
+
+## 🎯 Цели урока
+- Понять архитектуру Ray
+- Научиться распределять вычисления
+- Применить Ray к федеративному обучению
+
+## 📚 Что такое Ray?
+
+**Ray** - это фреймворк для распределенных вычислений на Python.
+
+### Ключевые концепции:
+
+1. **Tasks** - распределенные функции
+2. **Actors** - распределенные объекты с состоянием
+3. **Objects** - распределенное хранилище
+
+## 💻 Основы Ray
+
+### Установка:
+\`\`\`bash
+pip install ray[default]
+\`\`\`
+
+### Инициализация:
+\`\`\`python
+import ray
+
+# Локальный кластер
+ray.init()
+
+# Подключение к существующему
+# ray.init(address='ray://localhost:10001')
+\`\`\`
+
+### Ray Tasks (функции):
+
+\`\`\`python
+import ray
+import time
+
+ray.init()
+
+@ray.remote
+def slow_function(x):
+    """Медленная функция"""
+    time.sleep(1)
+    return x * x
+
+# Последовательно (4 секунды)
+start = time.time()
+results = [slow_function(i) for i in range(4)]
+print(f"Sequential: {time.time() - start:.2f}s")
+
+# Параллельно с Ray (1 секунда!)
+start = time.time()
+futures = [slow_function.remote(i) for i in range(4)]
+results = ray.get(futures)
+print(f"Parallel with Ray: {time.time() - start:.2f}s")
+print(f"Results: {results}")
+\`\`\`
+
+### Ray Actors (объекты):
+
+\`\`\`python
+@ray.remote
+class Counter:
+    """Распределенный счетчик с состоянием"""
+    def __init__(self):
+        self.value = 0
+
+    def increment(self):
+        self.value += 1
+        return self.value
+
+    def get_value(self):
+        return self.value
+
+# Создаем actor
+counter = Counter.remote()
+
+# Вызываем методы
+future1 = counter.increment.remote()
+future2 = counter.increment.remote()
+future3 = counter.get_value.remote()
+
+results = ray.get([future1, future2, future3])
+print(results)  # [1, 2, 2]
+\`\`\`
+
+## 🚀 Ray для федеративного обучения
+
+### Parameter Server паттерн:
+
+\`\`\`python
+import ray
+import torch
+import torch.nn as nn
+import numpy as np
+
+ray.init()
+
+@ray.remote
+class ParameterServer:
+    """Централизованный сервер параметров"""
+    def __init__(self, model):
+        self.model = model
+        self.optimizer = torch.optim.SGD(
+            self.model.parameters(), lr=0.01
+        )
+
+    @ray.method(num_returns=1)
+    def get_weights(self):
+        """Возвращаем текущие веса"""
+        return {k: v.cpu() for k, v in self.model.state_dict().items()}
+
+    @ray.method(num_returns=1)
+    def apply_gradients(self, *gradients):
+        """Применяем усредненные градиенты"""
+        # Усредняем градиенты от всех воркеров
+        avg_grads = {
+            k: torch.stack([g[k] for g in gradients]).mean(0)
+            for k in gradients[0].keys()
+        }
+
+        # Обновляем модель
+        with torch.no_grad():
+            for name, param in self.model.named_parameters():
+                if name in avg_grads:
+                    param.grad = avg_grads[name]
+
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+
+        return True
+
+@ray.remote
+class DataWorker:
+    """Воркер для обучения на данных"""
+    def __init__(self, worker_id, data):
+        self.worker_id = worker_id
+        self.data = data
+
+    def compute_gradients(self, weights):
+        """Вычисляем градиенты на локальных данных"""
+        # Создаем модель и загружаем веса
+        model = create_model()  # Ваша функция создания модели
+        model.load_state_dict(weights)
+
+        # Один шаг обучения
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+        for data, target in self.data:
+            optimizer.zero_grad()
+            output = model(data)
+            loss = nn.functional.cross_entropy(output, target)
+            loss.backward()
+            break  # Один батч
+
+        # Возвращаем градиенты
+        gradients = {
+            name: param.grad.cpu()
+            for name, param in model.named_parameters()
+        }
+
+        return gradients
+
+# Создаем Parameter Server
+ps = ParameterServer.remote(create_model())
+
+# Создаем воркеров
+num_workers = 4
+workers = [
+    DataWorker.remote(i, load_data_shard(i))
+    for i in range(num_workers)
+]
+
+# Обучение
+num_iterations = 100
+
+for iteration in range(num_iterations):
+    # 1. Получаем текущие веса
+    weights = ray.get(ps.get_weights.remote())
+
+    # 2. Воркеры вычисляют градиенты параллельно
+    gradients = ray.get([
+        worker.compute_gradients.remote(weights)
+        for worker in workers
+    ])
+
+    # 3. Parameter Server усредняет и обновляет
+    ps.apply_gradients.remote(*gradients)
+
+    if iteration % 10 == 0:
+        print(f"Iteration {iteration} completed")
+
+print("✅ Distributed training complete!")
+\`\`\`
+
+## 📊 Ray Dashboard
+
+Ray предоставляет веб-интерфейс для мониторинга:
+
+\`\`\`bash
+# Запускаем Ray с дашбордом
+ray start --head --dashboard-host=0.0.0.0 --dashboard-port=8265
+
+# Открываем браузер
+# http://localhost:8265
+\`\`\`
+
+Вы увидите:
+- Использование CPU/GPU/памяти
+- Активные tasks и actors
+- Графики производительности
+- Логи
+
+## 🎯 Преимущества Ray
+
+1. **Простота** - обычный Python код
+2. **Масштабируемость** - от ноутбука до тысяч серверов
+3. **Fault tolerance** - автоматическое восстановление
+4. **Эффективность** - zero-copy object store
+`,
+                        en: 'Lesson 6: Ray Framework...'
+                    }
                 },
+
+                // УРОК 7: DeepSpeed и vLLM
                 {
                     id: 'lesson-7',
                     number: 7,
@@ -855,9 +1338,251 @@ n - общий размер данных
                         ru: 'Оптимизация: DeepSpeed и vLLM',
                         en: 'Optimization: DeepSpeed and vLLM'
                     },
+                    description: {
+                        ru: 'Эффективное обучение и инференс больших моделей',
+                        en: 'Efficient training and inference of large models'
+                    },
                     difficulty: 'intermediate',
-                    duration: { ru: '3 часа', en: '3 hours' }
+                    duration: { ru: '3 часа', en: '3 hours' },
+                    topics: ['deepspeed', 'vllm', 'optimization'],
+                    content: {
+                        ru: `
+# Урок 7: Оптимизация больших моделей
+
+## 🎯 Цели урока
+- Научиться оптимизировать большие модели
+- Освоить DeepSpeed для обучения
+- Использовать vLLM для инференса
+
+## 📚 Часть 1: DeepSpeed
+
+### Что такое DeepSpeed?
+
+**DeepSpeed** - библиотека от Microsoft для эффективного обучения больших моделей.
+
+### Ключевые возможности:
+
+1. **ZeRO** - Zero Redundancy Optimizer
+2. **Gradient Accumulation** - накопление градиентов
+3. **Mixed Precision** - FP16/BF16 обучение
+4. **Pipeline Parallelism** - параллелизм по слоям
+
+### Установка:
+\`\`\`bash
+pip install deepspeed
+\`\`\`
+
+### Базовое использование:
+
+\`\`\`python
+import torch
+import deepspeed
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Модель
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+
+# DeepSpeed конфигурация
+ds_config = {
+    "train_batch_size": 16,
+    "gradient_accumulation_steps": 4,
+    "optimizer": {
+        "type": "Adam",
+        "params": {
+            "lr": 1e-5,
+            "betas": [0.9, 0.999],
+            "eps": 1e-8
+        }
+    },
+    "fp16": {
+        "enabled": True
+    },
+    "zero_optimization": {
+        "stage": 2  # ZeRO Stage 2
+    }
+}
+
+# Инициализация DeepSpeed
+model_engine, optimizer, _, _ = deepspeed.initialize(
+    model=model,
+    config=ds_config
+)
+
+# Обучение
+for batch in train_dataloader:
+    outputs = model_engine(batch['input_ids'])
+    loss = outputs.loss
+
+    model_engine.backward(loss)
+    model_engine.step()
+\`\`\`
+
+### ZeRO Stages:
+
+**Stage 0**: Без оптимизаций
+**Stage 1**: Optimizer State Partitioning
+**Stage 2**: + Gradient Partitioning
+**Stage 3**: + Parameter Partitioning
+
+\`\`\`python
+# ZeRO Stage 3 - максимальная экономия памяти
+{
+    "zero_optimization": {
+        "stage": 3,
+        "offload_optimizer": {
+            "device": "cpu",  # Optimizer states на CPU
+            "pin_memory": True
+        },
+        "offload_param": {
+            "device": "cpu",  # Параметры на CPU
+            "pin_memory": True
+        }
+    }
+}
+\`\`\`
+
+## 🚀 Часть 2: vLLM
+
+### Что такое vLLM?
+
+**vLLM** - высокопроизводительная библиотека для инференса LLM.
+
+### Особенности:
+
+1. **PagedAttention** - эффективное использование памяти
+2. **Continuous Batching** - динамический батчинг
+3. **Quantization** - квантизация моделей
+4. **Multi-GPU** - распределение по GPU
+
+### Установка:
+\`\`\`bash
+pip install vllm
+\`\`\`
+
+### Использование:
+
+\`\`\`python
+from vllm import LLM, SamplingParams
+
+# Инициализация
+llm = LLM(
+    model="meta-llama/Llama-2-7b-hf",
+    tensor_parallel_size=4,  # 4 GPU
+    gpu_memory_utilization=0.9
+)
+
+# Параметры генерации
+sampling_params = SamplingParams(
+    temperature=0.8,
+    top_p=0.95,
+    max_tokens=256
+)
+
+# Промпты
+prompts = [
+    "Explain quantum computing in simple terms:",
+    "Write a Python function to sort a list:",
+    "What is the meaning of life?"
+]
+
+# Генерация (batch!)
+outputs = llm.generate(prompts, sampling_params)
+
+for output in outputs:
+    print(f"Prompt: {output.prompt}")
+    print(f"Generated: {output.outputs[0].text}")
+    print("-" * 50)
+\`\`\`
+
+### OpenAI-compatible API:
+
+\`\`\`python
+from vllm import AsyncLLMEngine, AsyncEngineArgs
+from vllm.entrypoints.openai import api_server
+
+# Запускаем сервер
+python -m vllm.entrypoints.openai.api_server \\
+    --model meta-llama/Llama-2-7b-hf \\
+    --tensor-parallel-size 4 \\
+    --port 8000
+
+# Используем как OpenAI API
+import openai
+
+openai.api_base = "http://localhost:8000/v1"
+openai.api_key = "EMPTY"
+
+response = openai.Completion.create(
+    model="meta-llama/Llama-2-7b-hf",
+    prompt="Once upon a time",
+    max_tokens=100
+)
+\`\`\`
+
+## 💡 Практический пример: Distributed LLM
+
+\`\`\`python
+import ray
+from vllm import LLM
+from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.engine.async_llm_engine import AsyncLLMEngine
+
+ray.init()
+
+@ray.remote(num_gpus=1)
+class DistributedLLM:
+    def __init__(self, model_name):
+        self.llm = LLM(
+            model=model_name,
+            gpu_memory_utilization=0.9
+        )
+
+    async def generate(self, prompts, **kwargs):
+        return self.llm.generate(prompts, **kwargs)
+
+# Создаем несколько экземпляров
+num_replicas = 4
+llms = [
+    DistributedLLM.remote("gpt2")
+    for _ in range(num_replicas)
+]
+
+# Распределенная генерация
+prompts = ["Hello"] * 100
+
+# Разделяем промпты между репликами
+chunk_size = len(prompts) // num_replicas
+futures = []
+
+for i, llm in enumerate(llms):
+    start = i * chunk_size
+    end = start + chunk_size
+    future = llm.generate.remote(prompts[start:end])
+    futures.append(future)
+
+# Получаем результаты
+results = ray.get(futures)
+\`\`\`
+
+## 📊 Сравнение производительности
+
+| Method | Throughput | Memory | Latency |
+|--------|-----------|--------|---------|
+| Naive  | 10 tok/s  | 24GB   | 500ms   |
+| DeepSpeed | 50 tok/s | 16GB | 200ms |
+| vLLM   | 200 tok/s | 12GB   | 50ms    |
+
+## 🎯 Рекомендации
+
+**Обучение**: DeepSpeed
+**Инференс**: vLLM
+**Распределение**: Ray + vLLM
+`,
+                        en: 'Lesson 7: Optimization with DeepSpeed and vLLM...'
+                    }
                 },
+
+                // УРОК 8: Production Deployment
                 {
                     id: 'lesson-8',
                     number: 8,
@@ -865,9 +1590,299 @@ n - общий размер данных
                         ru: 'Production: Развертывание Ray Cluster',
                         en: 'Production: Ray Cluster Deployment'
                     },
+                    description: {
+                        ru: 'Деплой распределенной системы в production',
+                        en: 'Deploying distributed system to production'
+                    },
                     difficulty: 'advanced',
-                    duration: { ru: '4 часа', en: '4 hours' }
+                    duration: { ru: '4 часа', en: '4 hours' },
+                    topics: ['deployment', 'docker', 'kubernetes'],
+                    content: {
+                        ru: `
+# Урок 8: Production Deployment
+
+## 🎯 Цели урока
+- Настроить Ray Cluster
+- Докеризовать приложение
+- Задеплоить в Kubernetes
+
+## 📚 Часть 1: Ray Cluster Setup
+
+### Локальный кластер:
+
+\`\`\`bash
+# Head node
+ray start --head --port=6379 --dashboard-host=0.0.0.0
+
+# Worker nodes
+ray start --address='head-node-ip:6379'
+\`\`\`
+
+### Конфигурация кластера:
+
+\`\`\`yaml
+# cluster.yaml
+cluster_name: distributed-ai
+
+max_workers: 10
+
+head_node:
+    instance_type: m5.2xlarge
+    image_id: ami-ubuntu-20.04
+
+worker_nodes:
+    instance_type: g4dn.xlarge  # GPU instance
+    image_id: ami-ubuntu-20.04
+    min_workers: 2
+    max_workers: 10
+
+setup_commands:
+    - pip install ray[default]
+    - pip install torch torchvision
+    - pip install vllm
+\`\`\`
+
+## 🐳 Часть 2: Docker
+
+### Dockerfile для Ray Head:
+
+\`\`\`dockerfile
+FROM rayproject/ray:latest-gpu
+
+WORKDIR /app
+
+# Зависимости
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Код приложения
+COPY src/ ./src/
+COPY config/ ./config/
+
+# Порты
+EXPOSE 6379 8265 10001
+
+# Запуск
+CMD ["ray", "start", "--head", \\
+     "--port=6379", \\
+     "--dashboard-host=0.0.0.0", \\
+     "--dashboard-port=8265", \\
+     "--block"]
+\`\`\`
+
+### Dockerfile для Worker:
+
+\`\`\`dockerfile
+FROM rayproject/ray:latest-gpu
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+
+CMD ["ray", "start", \\
+     "--address", "\\$RAY_HEAD_SERVICE:6379", \\
+     "--block"]
+\`\`\`
+
+### docker-compose.yml:
+
+\`\`\`yaml
+version: '3.8'
+
+services:
+  ray-head:
+    build:
+      context: .
+      dockerfile: Dockerfile.head
+    ports:
+      - "6379:6379"
+      - "8265:8265"
+      - "10001:10001"
+    environment:
+      - RAY_BACKEND_LOG_LEVEL=info
+    volumes:
+      - ./data:/app/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  ray-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - ray-head
+    environment:
+      - RAY_HEAD_SERVICE=ray-head
+    deploy:
+      replicas: 3
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+\`\`\`
+
+## ☸️ Часть 3: Kubernetes
+
+### Ray Operator:
+
+\`\`\`bash
+# Установка Ray Operator
+helm repo add kuberay https://ray-project.github.io/kuberay-helm/
+helm install kuberay-operator kuberay/kuberay-operator
+\`\`\`
+
+### RayCluster manifest:
+
+\`\`\`yaml
+# raycluster.yaml
+apiVersion: ray.io/v1alpha1
+kind: RayCluster
+metadata:
+  name: distributed-ai-cluster
+spec:
+  rayVersion: '2.9.0'
+
+  headGroupSpec:
+    rayStartParams:
+      dashboard-host: '0.0.0.0'
+      port: '6379'
+    template:
+      spec:
+        containers:
+        - name: ray-head
+          image: your-registry/ray-app:latest
+          ports:
+          - containerPort: 6379
+            name: gcs-server
+          - containerPort: 8265
+            name: dashboard
+          resources:
+            limits:
+              cpu: "4"
+              memory: "16Gi"
+            requests:
+              cpu: "2"
+              memory: "8Gi"
+
+  workerGroupSpecs:
+  - replicas: 5
+    minReplicas: 2
+    maxReplicas: 10
+    groupName: gpu-workers
+    rayStartParams: {}
+    template:
+      spec:
+        containers:
+        - name: ray-worker
+          image: your-registry/ray-app:latest
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+              cpu: "8"
+              memory: "32Gi"
+            requests:
+              nvidia.com/gpu: 1
+              cpu: "4"
+              memory: "16Gi"
+\`\`\`
+
+### Деплой:
+
+\`\`\`bash
+# Применяем манифест
+kubectl apply -f raycluster.yaml
+
+# Проверяем статус
+kubectl get raycluster
+
+# Форвардим dashboard
+kubectl port-forward service/distributed-ai-cluster-head-svc 8265:8265
+
+# Открываем http://localhost:8265
+\`\`\`
+
+## 🌐 Часть 4: API Service
+
+### FastAPI + Ray:
+
+\`\`\`python
+from fastapi import FastAPI
+import ray
+from vllm import LLM
+
+app = FastAPI()
+
+# Инициализация Ray при старте
+@app.on_event("startup")
+async def startup():
+    ray.init(address="auto")  # Подключаемся к кластеру
+
+# API endpoint
+@app.post("/generate")
+async def generate(prompt: str):
+    @ray.remote
+    def inference(text):
+        llm = LLM(model="gpt2")
+        return llm.generate(text)
+
+    result = ray.get(inference.remote(prompt))
+    return {"result": result}
+
+# Health check
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+\`\`\`
+
+### Kubernetes Service:
+
+\`\`\`yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: LoadBalancer
+\`\`\`
+
+## 📊 Мониторинг
+
+Метрики для отслеживания:
+- Ray Dashboard: CPU/GPU/Memory
+- Prometheus: Custom metrics
+- Grafana: Visualization
+- Jaeger: Distributed tracing
+
+## ✅ Чеклист деплоя
+
+- [ ] Ray Cluster запущен
+- [ ] Workers подключены
+- [ ] GPU доступны
+- [ ] API отвечает
+- [ ] Мониторинг настроен
+- [ ] Логи собираются
+- [ ] Автомасштабирование работает
+`,
+                        en: 'Lesson 8: Production Deployment...'
+                    }
                 },
+
+                // УРОК 9: Monitoring
                 {
                     id: 'lesson-9',
                     number: 9,
@@ -875,8 +1890,356 @@ n - общий размер данных
                         ru: 'Monitoring и масштабирование',
                         en: 'Monitoring and Scaling'
                     },
+                    description: {
+                        ru: 'Prometheus, Grafana и автомасштабирование',
+                        en: 'Prometheus, Grafana and autoscaling'
+                    },
                     difficulty: 'advanced',
-                    duration: { ru: '4 часа', en: '4 hours' }
+                    duration: { ru: '4 часа', en: '4 hours' },
+                    topics: ['monitoring', 'prometheus', 'grafana'],
+                    content: {
+                        ru: `
+# Урок 9: Monitoring и Scaling
+
+## 🎯 Цели урока
+- Настроить мониторинг с Prometheus
+- Создать дашборды в Grafana
+- Реализовать автомасштабирование
+
+## 📊 Часть 1: Prometheus
+
+### Установка:
+
+\`\`\`bash
+# Helm chart
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install prometheus prometheus-community/kube-prometheus-stack
+\`\`\`
+
+### Конфигурация для Ray:
+
+\`\`\`yaml
+# prometheus-config.yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'ray-cluster'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - default
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_ray_io_cluster_name]
+        action: keep
+        regex: distributed-ai-cluster
+\`\`\`
+
+### Custom metrics в Ray:
+
+\`\`\`python
+from ray.util.metrics import Counter, Histogram, Gauge
+import ray
+
+ray.init()
+
+# Счетчик запросов
+requests_counter = Counter(
+    "inference_requests_total",
+    description="Total inference requests",
+    tag_keys=("model", "status")
+)
+
+# Гистограмма латентности
+latency_histogram = Histogram(
+    "inference_latency_seconds",
+    description="Inference latency",
+    boundaries=[0.1, 0.5, 1.0, 2.0, 5.0],
+    tag_keys=("model",)
+)
+
+# Gauge для активных задач
+active_tasks = Gauge(
+    "active_inference_tasks",
+    description="Number of active tasks",
+    tag_keys=("model",)
+)
+
+@ray.remote
+def inference_with_metrics(model_name, input_data):
+    import time
+    start = time.time()
+
+    try:
+        active_tasks.set(1, tags={"model": model_name})
+
+        # Ваша логика инференса
+        result = model.predict(input_data)
+
+        # Успех
+        requests_counter.inc(tags={
+            "model": model_name,
+            "status": "success"
+        })
+
+        return result
+
+    except Exception as e:
+        # Ошибка
+        requests_counter.inc(tags={
+            "model": model_name,
+            "status": "error"
+        })
+        raise e
+
+    finally:
+        # Записываем латентность
+        duration = time.time() - start
+        latency_histogram.observe(
+            duration,
+            tags={"model": model_name}
+        )
+        active_tasks.set(0, tags={"model": model_name})
+\`\`\`
+
+## 📈 Часть 2: Grafana
+
+### Установка (уже включена в kube-prometheus-stack):
+
+\`\`\`bash
+# Форвардим порт
+kubectl port-forward svc/prometheus-grafana 3000:80
+
+# Открываем http://localhost:3000
+# Логин: admin
+# Пароль: prom-operator
+\`\`\`
+
+### Dashboard для Ray:
+
+\`\`\`json
+{
+  "dashboard": {
+    "title": "Distributed AI Cluster",
+    "panels": [
+      {
+        "title": "Requests per Second",
+        "targets": [{
+          "expr": "rate(inference_requests_total[5m])"
+        }]
+      },
+      {
+        "title": "P95 Latency",
+        "targets": [{
+          "expr": "histogram_quantile(0.95, inference_latency_seconds)"
+        }]
+      },
+      {
+        "title": "GPU Utilization",
+        "targets": [{
+          "expr": "ray_gpu_utilization"
+        }]
+      },
+      {
+        "title": "Active Workers",
+        "targets": [{
+          "expr": "ray_node_alive"
+        }]
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Alerts:
+
+\`\`\`yaml
+# alerts.yaml
+groups:
+  - name: ray_cluster
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(inference_requests_total{status="error"}[5m]) > 0.1
+        for: 5m
+        annotations:
+          summary: "High error rate in inference"
+
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, inference_latency_seconds) > 2
+        for: 5m
+        annotations:
+          summary: "P95 latency > 2s"
+
+      # Worker down
+      - alert: WorkerDown
+        expr: |
+          ray_node_alive < 3
+        for: 2m
+        annotations:
+          summary: "Less than 3 workers alive"
+\`\`\`
+
+## ⚡ Часть 3: Автомасштабирование
+
+### Horizontal Pod Autoscaler:
+
+\`\`\`yaml
+# hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ray-worker-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: ray.io/v1alpha1
+    kind: RayCluster
+    name: distributed-ai-cluster
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: nvidia.com/gpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: inference_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "100"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+\`\`\`
+
+### Ray Autoscaler:
+
+\`\`\`python
+# autoscaler.py
+from ray.autoscaler.sdk import request_resources
+
+# Динамический запрос ресурсов
+@ray.remote
+class AdaptiveWorker:
+    def __init__(self):
+        self.queue_size = 0
+
+    def process(self, task):
+        self.queue_size += 1
+
+        # Если очередь большая - запрашиваем больше воркеров
+        if self.queue_size > 100:
+            request_resources(num_cpus=10, num_gpus=5)
+
+        # Обработка
+        result = self.do_work(task)
+
+        self.queue_size -= 1
+        return result
+\`\`\`
+
+## 🔔 Часть 4: Logging
+
+### Centralized logging с Fluentd:
+
+\`\`\`yaml
+# fluentd-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+data:
+  fluent.conf: |
+    <source>
+      @type tail
+      path /var/log/ray/*.log
+      pos_file /var/log/ray.pos
+      tag ray.*
+      format json
+    </source>
+
+    <match ray.**>
+      @type elasticsearch
+      host elasticsearch.default.svc.cluster.local
+      port 9200
+      logstash_format true
+      logstash_prefix ray
+    </match>
+\`\`\`
+
+### Structured logging в приложении:
+
+\`\`\`python
+import logging
+import json
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_data = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName
+        }
+        return json.dumps(log_data)
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logger.addHandler(handler)
+
+# Использование
+logger.info("Inference started", extra={
+    "model": "gpt2",
+    "batch_size": 32,
+    "request_id": "abc123"
+})
+\`\`\`
+
+## 📊 Итоговый стек мониторинга
+
+1. **Metrics**: Prometheus + Grafana
+2. **Logs**: Fluentd + Elasticsearch + Kibana
+3. **Traces**: Jaeger
+4. **Alerts**: Alertmanager + PagerDuty/Slack
+5. **Dashboards**: Grafana + Ray Dashboard
+
+## ✅ Best Practices
+
+- Логируйте все critical events
+- Мониторьте SLA метрики (latency, error rate)
+- Настройте алерты на аномалии
+- Регулярно проверяйте дашборды
+- Автоматизируйте масштабирование
+`,
+                        en: 'Lesson 9: Monitoring and Scaling...'
+                    }
                 },
                 {
                     id: 'lesson-10',
