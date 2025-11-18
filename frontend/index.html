@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarm AI Knowledge Graph v4.0 - Enterprise Edition</title>
+
+    <!-- Cytoscape.js and extensions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+    <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webcola@3.4.0/WebCola/cola.min.js"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- KaTeX for formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1>🧠 Swarm AI Knowledge Graph</h1>
+                <span class="version">v4.0 Enterprise</span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-icon" id="toggleSidebar" title="Toggle Sidebar">
+                    <span>☰</span>
+                </button>
+                <button class="btn btn-icon" id="toggleAnalytics" title="Toggle Analytics">
+                    <span>📊</span>
+                </button>
+                <button class="btn btn-primary" id="exportBtn">
+                    <span>💾</span> Export
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="app-body">
+            <!-- Left Sidebar -->
+            <aside class="sidebar sidebar-left" id="leftSidebar">
+                <div class="sidebar-section">
+                    <h3>🔍 Search & Filter</h3>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search nodes...">
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>📊 Categories</h3>
+                    <div class="filter-group" id="categoryFilters"></div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>🔗 Edge Types</h3>
+                    <div class="filter-group" id="edgeFilters"></div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>⏳ Timeline</h3>
+                    <input type="range" id="yearSlider" min="2018" max="2025" value="2025" class="slider">
+                    <div class="slider-value">Year: <span id="yearValue">2025</span></div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>🎨 Layout</h3>
+                    <select id="layoutSelect" class="select-input">
+                        <option value="fcose">fCoSE (Force)</option>
+                        <option value="cola">CoLA</option>
+                        <option value="circle">Circle</option>
+                        <option value="grid">Grid</option>
+                        <option value="concentric">Concentric</option>
+                    </select>
+                    <button class="btn btn-block" id="applyLayout">Apply Layout</button>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>🎯 Controls</h3>
+                    <button class="btn btn-block" id="fitBtn">Fit to Screen</button>
+                    <button class="btn btn-block" id="resetBtn">Reset View</button>
+                    <button class="btn btn-block" id="seedBtn">Seed Database</button>
+                </div>
+            </aside>
+
+            <!-- Graph Canvas -->
+            <main class="graph-container">
+                <div id="cy"></div>
+
+                <!-- Floating Stats -->
+                <div class="floating-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Nodes:</span>
+                        <span class="stat-value" id="nodeCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Edges:</span>
+                        <span class="stat-value" id="edgeCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Density:</span>
+                        <span class="stat-value" id="density">0</span>
+                    </div>
+                </div>
+
+                <!-- Node Info Panel -->
+                <div class="node-info-panel" id="nodeInfo">
+                    <div class="panel-header">
+                        <h3 id="nodeTitle">Select a node</h3>
+                        <button class="btn-close" id="closeNodeInfo">×</button>
+                    </div>
+                    <div class="panel-body" id="nodeInfoBody">
+                        <p>Click on a node to see details</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Sidebar - Analytics -->
+            <aside class="sidebar sidebar-right" id="rightSidebar">
+                <div class="sidebar-section">
+                    <h3>📈 Graph Analytics</h3>
+
+                    <div class="analytics-tabs">
+                        <button class="tab-btn active" data-tab="pagerank">PageRank</button>
+                        <button class="tab-btn" data-tab="centrality">Centrality</button>
+                        <button class="tab-btn" data-tab="communities">Communities</button>
+                    </div>
+
+                    <div class="tab-content active" id="pagerank">
+                        <button class="btn btn-block" id="calcPageRank">Calculate PageRank</button>
+                        <canvas id="pagerankChart" height="200"></canvas>
+                        <div id="pagerankResults" class="results-list"></div>
+                    </div>
+
+                    <div class="tab-content" id="centrality">
+                        <select id="centralityType" class="select-input">
+                            <option value="degree">Degree</option>
+                            <option value="betweenness">Betweenness</option>
+                            <option value="closeness">Closeness</option>
+                        </select>
+                        <button class="btn btn-block" id="calcCentrality">Calculate</button>
+                        <div id="centralityResults" class="results-list"></div>
+                    </div>
+
+                    <div class="tab-content" id="communities">
+                        <button class="btn btn-block" id="detectCommunities">Detect Communities</button>
+                        <div id="communitiesResults" class="results-list"></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>🔍 Path Finding</h3>
+                    <input type="text" class="input-sm" id="pathFrom" placeholder="From node ID">
+                    <input type="text" class="input-sm" id="pathTo" placeholder="To node ID">
+                    <button class="btn btn-block" id="findPath">Find Shortest Path</button>
+                    <div id="pathResults" class="results-list"></div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>📊 Statistics</h3>
+                    <button class="btn btn-block" id="loadStats">Load Statistics</button>
+                    <div id="statsResults" class="stats-grid"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export Graph</h2>
+                <button class="btn-close" id="closeExportModal">×</button>
+            </div>
+            <div class="modal-body">
+                <button class="btn btn-block" data-export="json">JSON</button>
+                <button class="btn btn-block" data-export="graphml">GraphML</button>
+                <button class="btn btn-block" data-export="cypher">Cypher</button>
+                <button class="btn btn-block" data-export="csv-nodes">CSV (Nodes)</button>
+                <button class="btn btn-block" data-export="csv-edges">CSV (Edges)</button>
+                <button class="btn btn-block" data-export="gexf">GEXF (Gephi)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
