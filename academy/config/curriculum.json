@@ -1,0 +1,574 @@
+{
+  "version": "2.0",
+  "title": {
+    "ru": "Decentralized AI Academy",
+    "en": "Decentralized AI Academy"
+  },
+  "description": {
+    "ru": "Комплексная программа обучения распределенному искусственному интеллекту",
+    "en": "Comprehensive Distributed AI Learning Program"
+  },
+  "metadata": {
+    "totalModules": 10,
+    "totalLessons": 50,
+    "totalMicrolessons": 150,
+    "totalProjects": 10,
+    "estimatedHours": 80,
+    "difficultyLevels": ["beginner", "intermediate", "advanced", "expert"],
+    "languages": ["ru", "en"]
+  },
+  "pathways": [
+    {
+      "id": "pathway-beginner",
+      "title": {
+        "ru": "🌱 Путь новичка: От основ к практике",
+        "en": "🌱 Beginner Path: From Basics to Practice"
+      },
+      "description": {
+        "ru": "Для тех, кто только начинает изучать распределенный ИИ",
+        "en": "For those just starting with Distributed AI"
+      },
+      "difficulty": "beginner",
+      "estimatedHours": 25,
+      "modules": ["mod-01", "mod-02", "mod-03", "mod-04"],
+      "prerequisites": {
+        "programming": "basic",
+        "math": "basic",
+        "ml": "none"
+      },
+      "learningObjectives": [
+        "Понимать основные концепции распределенного ИИ",
+        "Реализовывать простые алгоритмы роевого интеллекта",
+        "Создавать базовые многоагентные системы",
+        "Понимать принципы федеративного обучения"
+      ],
+      "outcomes": [
+        "Сертификат 'Beginner in Distributed AI'",
+        "Портфолио из 3 проектов",
+        "Готовность к intermediate уровню"
+      ]
+    },
+    {
+      "id": "pathway-intermediate",
+      "title": {
+        "ru": "🚀 Путь практика: Реализация систем",
+        "en": "🚀 Practitioner Path: System Implementation"
+      },
+      "difficulty": "intermediate",
+      "estimatedHours": 35,
+      "modules": ["mod-05", "mod-06", "mod-07"],
+      "prerequisites": {
+        "programming": "intermediate",
+        "ml": "basic",
+        "distributedSystems": "basic"
+      }
+    },
+    {
+      "id": "pathway-advanced",
+      "title": {
+        "ru": "⚡ Путь эксперта: Production деплой",
+        "en": "⚡ Expert Path: Production Deployment"
+      },
+      "difficulty": "advanced",
+      "estimatedHours": 40,
+      "modules": ["mod-08", "mod-09", "mod-10"],
+      "prerequisites": {
+        "programming": "advanced",
+        "ml": "intermediate",
+        "distributedSystems": "intermediate"
+      }
+    },
+    {
+      "id": "pathway-custom",
+      "title": {
+        "ru": "🎯 Персонализированный путь",
+        "en": "🎯 Personalized Path"
+      },
+      "description": {
+        "ru": "Адаптивный путь на основе ваших целей и текущих знаний",
+        "en": "Adaptive path based on your goals and current knowledge"
+      },
+      "adaptive": true,
+      "generated": true
+    }
+  ],
+  "modules": [
+    {
+      "id": "mod-01",
+      "number": 1,
+      "title": {
+        "ru": "Основы распределенного ИИ",
+        "en": "Distributed AI Fundamentals"
+      },
+      "description": {
+        "ru": "Введение в концепции децентрализованного машинного обучения",
+        "en": "Introduction to decentralized machine learning concepts"
+      },
+      "difficulty": "beginner",
+      "estimatedHours": 6,
+      "lessons": [
+        "lesson-001",
+        "lesson-002",
+        "lesson-003",
+        "lesson-004",
+        "lesson-005"
+      ],
+      "microlessons": [
+        "micro-001",
+        "micro-002",
+        "micro-003",
+        "micro-004",
+        "micro-005"
+      ],
+      "project": "project-01",
+      "assessment": "assessment-mod-01",
+      "prerequisites": [],
+      "learningObjectives": {
+        "remember": [
+          "Определить основные компоненты распределенного ИИ",
+          "Перечислить отличия от централизованного подхода"
+        ],
+        "understand": [
+          "Объяснить почему приватность важна",
+          "Описать преимущества распределенного обучения"
+        ],
+        "apply": [
+          "Привести примеры применения из реальной жизни",
+          "Выбрать подходящий подход для задачи"
+        ],
+        "analyze": [
+          "Сравнить централизованный и распределенный подходы",
+          "Определить когда использовать каждый подход"
+        ],
+        "evaluate": [
+          "Оценить эффективность распределенной системы",
+          "Критиковать недостатки подходов"
+        ],
+        "create": [
+          "Спроектировать простую распределенную систему",
+          "Разработать решение для конкретной задачи"
+        ]
+      },
+      "gamification": {
+        "xp": 500,
+        "achievements": [
+          "first-module",
+          "distributed-ai-basics"
+        ],
+        "badge": "badge-foundations"
+      }
+    },
+    {
+      "id": "mod-02",
+      "number": 2,
+      "title": {
+        "ru": "Роевой интеллект",
+        "en": "Swarm Intelligence"
+      },
+      "difficulty": "beginner",
+      "estimatedHours": 7,
+      "lessons": [
+        "lesson-006",
+        "lesson-007",
+        "lesson-008",
+        "lesson-009",
+        "lesson-010"
+      ],
+      "project": "project-02",
+      "prerequisites": ["mod-01"]
+    },
+    {
+      "id": "mod-03",
+      "number": 3,
+      "title": {
+        "ru": "Многоагентные системы",
+        "en": "Multi-Agent Systems"
+      },
+      "difficulty": "beginner",
+      "estimatedHours": 7,
+      "lessons": [
+        "lesson-011",
+        "lesson-012",
+        "lesson-013",
+        "lesson-014",
+        "lesson-015"
+      ],
+      "project": "project-03"
+    },
+    {
+      "id": "mod-04",
+      "number": 4,
+      "title": {
+        "ru": "Федеративное обучение",
+        "en": "Federated Learning"
+      },
+      "difficulty": "intermediate",
+      "estimatedHours": 8,
+      "lessons": [
+        "lesson-016",
+        "lesson-017",
+        "lesson-018",
+        "lesson-019",
+        "lesson-020"
+      ],
+      "project": "project-04"
+    }
+  ],
+  "contentTypes": {
+    "lessons": {
+      "theory": {
+        "icon": "📚",
+        "avgDuration": 600,
+        "format": ["text", "images", "diagrams", "animations"]
+      },
+      "interactive": {
+        "icon": "🎮",
+        "avgDuration": 900,
+        "format": ["simulations", "visualizations", "demos"]
+      },
+      "practice": {
+        "icon": "💻",
+        "avgDuration": 1200,
+        "format": ["coding", "exercises", "challenges"]
+      },
+      "video": {
+        "icon": "🎥",
+        "avgDuration": 480,
+        "format": ["video", "captions", "interactive-elements"]
+      }
+    },
+    "microlessons": {
+      "concept": {
+        "icon": "💡",
+        "avgDuration": 180,
+        "purpose": "Quick concept explanation"
+      },
+      "code-snippet": {
+        "icon": "📝",
+        "avgDuration": 120,
+        "purpose": "Code pattern demonstration"
+      },
+      "tip": {
+        "icon": "✨",
+        "avgDuration": 90,
+        "purpose": "Practical tip or trick"
+      },
+      "mistake": {
+        "icon": "⚠️",
+        "avgDuration": 150,
+        "purpose": "Common mistake to avoid"
+      }
+    }
+  },
+  "gamification": {
+    "levels": [
+      {
+        "level": 1,
+        "title": { "ru": "Новичок", "en": "Novice" },
+        "xpRequired": 0,
+        "icon": "🌱"
+      },
+      {
+        "level": 5,
+        "title": { "ru": "Ученик", "en": "Apprentice" },
+        "xpRequired": 1000,
+        "icon": "🎓"
+      },
+      {
+        "level": 10,
+        "title": { "ru": "Практик", "en": "Practitioner" },
+        "xpRequired": 3000,
+        "icon": "💼"
+      },
+      {
+        "level": 20,
+        "title": { "ru": "Эксперт", "en": "Expert" },
+        "xpRequired": 8000,
+        "icon": "⭐"
+      },
+      {
+        "level": 40,
+        "title": { "ru": "Мастер", "en": "Master" },
+        "xpRequired": 20000,
+        "icon": "🏆"
+      },
+      {
+        "level": 60,
+        "title": { "ru": "Гроссмейстер", "en": "Grandmaster" },
+        "xpRequired": 50000,
+        "icon": "👑"
+      }
+    ],
+    "achievementCategories": [
+      {
+        "category": "skill",
+        "title": { "ru": "Навыки", "en": "Skills" },
+        "achievements": [
+          {
+            "id": "code-warrior",
+            "title": { "ru": "Воин кода", "en": "Code Warrior" },
+            "description": { "ru": "Решить 50 упражнений", "en": "Complete 50 exercises" },
+            "icon": "⚔️",
+            "xp": 500,
+            "requirement": { "type": "exercises-completed", "count": 50 }
+          },
+          {
+            "id": "bug-hunter",
+            "title": { "ru": "Охотник за багами", "en": "Bug Hunter" },
+            "description": { "ru": "Найти и исправить 10 багов", "en": "Find and fix 10 bugs" },
+            "icon": "🐛",
+            "xp": 300,
+            "requirement": { "type": "bugs-fixed", "count": 10 }
+          },
+          {
+            "id": "optimizer",
+            "title": { "ru": "Оптимизатор", "en": "Optimizer" },
+            "description": { "ru": "Оптимизировать 5 алгоритмов", "en": "Optimize 5 algorithms" },
+            "icon": "⚡",
+            "xp": 400
+          }
+        ]
+      },
+      {
+        "category": "knowledge",
+        "title": { "ru": "Знания", "en": "Knowledge" },
+        "achievements": [
+          {
+            "id": "theory-master",
+            "title": { "ru": "Мастер теории", "en": "Theory Master" },
+            "icon": "📚",
+            "xp": 600,
+            "requirement": { "type": "quiz-perfect-score", "count": 10 }
+          }
+        ]
+      },
+      {
+        "category": "social",
+        "title": { "ru": "Социальные", "en": "Social" },
+        "achievements": [
+          {
+            "id": "mentor",
+            "title": { "ru": "Ментор", "en": "Mentor" },
+            "icon": "🎓",
+            "xp": 800,
+            "requirement": { "type": "helped-students", "count": 5 }
+          }
+        ]
+      },
+      {
+        "category": "streak",
+        "title": { "ru": "Постоянство", "en": "Consistency" },
+        "achievements": [
+          {
+            "id": "consistent",
+            "title": { "ru": "Постоянный", "en": "Consistent" },
+            "icon": "🔥",
+            "xp": 200,
+            "requirement": { "type": "daily-streak", "days": 7 }
+          },
+          {
+            "id": "dedicated",
+            "title": { "ru": "Преданный", "en": "Dedicated" },
+            "icon": "🔥🔥",
+            "xp": 1000,
+            "requirement": { "type": "daily-streak", "days": 30 }
+          },
+          {
+            "id": "unstoppable",
+            "title": { "ru": "Неудержимый", "en": "Unstoppable" },
+            "icon": "🔥🔥🔥",
+            "xp": 5000,
+            "requirement": { "type": "daily-streak", "days": 100 }
+          }
+        ]
+      }
+    ],
+    "quests": {
+      "daily": [
+        {
+          "id": "daily-lesson",
+          "title": { "ru": "Ежедневный урок", "en": "Daily Lesson" },
+          "description": { "ru": "Завершить 1 урок", "en": "Complete 1 lesson" },
+          "xp": 50,
+          "requirement": { "type": "lessons-completed", "count": 1, "timeframe": "day" }
+        },
+        {
+          "id": "daily-practice",
+          "title": { "ru": "Ежедневная практика", "en": "Daily Practice" },
+          "xp": 30,
+          "requirement": { "type": "exercises-completed", "count": 3, "timeframe": "day" }
+        }
+      ],
+      "weekly": [
+        {
+          "id": "weekly-module",
+          "title": { "ru": "Модуль недели", "en": "Module of the Week" },
+          "xp": 500,
+          "requirement": { "type": "module-completed", "timeframe": "week" }
+        }
+      ],
+      "epic": [
+        {
+          "id": "path-master",
+          "title": { "ru": "Мастер пути", "en": "Path Master" },
+          "xp": 5000,
+          "badge": "epic-path-master",
+          "requirement": { "type": "pathway-completed" }
+        }
+      ]
+    }
+  },
+  "adaptiveLearning": {
+    "diagnosticTest": {
+      "id": "diagnostic-initial",
+      "duration": 900,
+      "sections": [
+        {
+          "topic": "programming",
+          "questions": 5,
+          "adaptive": true
+        },
+        {
+          "topic": "machine-learning",
+          "questions": 5,
+          "adaptive": true
+        },
+        {
+          "topic": "distributed-systems",
+          "questions": 5,
+          "adaptive": true
+        }
+      ],
+      "outputLevels": ["beginner", "intermediate", "advanced", "expert"]
+    },
+    "difficultyAdjustment": {
+      "enabled": true,
+      "algorithm": "dynamic",
+      "parameters": {
+        "targetSuccessRate": 0.75,
+        "adjustmentThreshold": 0.15,
+        "windowSize": 5
+      }
+    },
+    "personalizedRecommendations": {
+      "enabled": true,
+      "factors": [
+        "current-level",
+        "learning-goals",
+        "time-available",
+        "learning-style",
+        "progress-rate",
+        "interest-topics"
+      ]
+    }
+  },
+  "spacedRepetition": {
+    "enabled": true,
+    "algorithm": "SM-2",
+    "flashcardTopics": [
+      "key-concepts",
+      "algorithms",
+      "formulas",
+      "best-practices",
+      "common-mistakes"
+    ],
+    "reviewSchedule": {
+      "default": [1, 3, 7, 14, 30, 90],
+      "struggling": [1, 1, 2, 4, 7, 14],
+      "mastered": [7, 30, 90, 180]
+    }
+  },
+  "socialLearning": {
+    "features": {
+      "discussions": {
+        "enabled": true,
+        "platform": "telegram",
+        "channels": [
+          {
+            "type": "general",
+            "url": "https://t.me/DecentralizedAI_Discussion"
+          },
+          {
+            "type": "announcements",
+            "url": "https://t.me/DecentralizedAI_Academy"
+          },
+          {
+            "type": "projects",
+            "url": "https://t.me/DecentralizedAI_Projects"
+          }
+        ]
+      },
+      "peerReview": {
+        "enabled": true,
+        "minimumReviews": 2,
+        "rewardXP": 50,
+        "criteria": [
+          "code-quality",
+          "functionality",
+          "documentation",
+          "creativity"
+        ]
+      },
+      "collaboration": {
+        "enabled": true,
+        "maxTeamSize": 4,
+        "projectTypes": ["beginner-team", "intermediate-team", "advanced-team"]
+      },
+      "leaderboards": {
+        "enabled": true,
+        "types": ["global", "weekly", "module", "friends"],
+        "metrics": ["xp", "lessons-completed", "projects", "help-given"]
+      },
+      "studyGroups": {
+        "enabled": true,
+        "matchingCriteria": ["level", "goals", "timezone", "language"]
+      }
+    }
+  },
+  "analytics": {
+    "tracking": {
+      "engagement": [
+        "dau",
+        "session-duration",
+        "lessons-per-session",
+        "return-rate"
+      ],
+      "learning": [
+        "completion-rate",
+        "quiz-scores",
+        "time-to-complete",
+        "hints-used",
+        "retry-attempts"
+      ],
+      "progress": [
+        "xp-gain-rate",
+        "level-progression",
+        "achievement-unlocks",
+        "skill-mastery"
+      ],
+      "social": [
+        "community-participation",
+        "peer-reviews",
+        "help-interactions",
+        "collaborations"
+      ]
+    },
+    "feedback": {
+      "immediate": {
+        "quiz-results": true,
+        "code-execution": true,
+        "test-results": true
+      },
+      "formative": {
+        "weekly-report": true,
+        "recommendations": true,
+        "strength-weakness": true
+      },
+      "summative": {
+        "module-certificate": true,
+        "project-portfolio": true,
+        "skill-badges": true
+      }
+    }
+  }
+}
