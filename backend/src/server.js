@@ -12,6 +12,7 @@ import { createServer } from 'http';
 import graphRoutes from './routes/graph.js';
 import analyticsRoutes from './routes/analytics.js';
 import exportRoutes from './routes/export.js';
+import learningRoutes from './routes/learning.js';
 
 // Import Neo4j connection
 import { testConnection } from './config/neo4j.js';
@@ -43,6 +44,7 @@ app.use('/api/', limiter);
 app.use('/api/graph', graphRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/learning', learningRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
